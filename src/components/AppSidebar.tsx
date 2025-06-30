@@ -14,7 +14,6 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
-  useSidebar,
 } from "@/components/ui/sidebar";
 
 const items = [
@@ -26,7 +25,6 @@ const items = [
 ];
 
 export function AppSidebar() {
-  const { collapsed } = useSidebar();
   const location = useLocation();
   const { user, logout } = useAuth();
   const currentPath = location.pathname;
@@ -36,21 +34,14 @@ export function AppSidebar() {
     isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : "hover:bg-sidebar-accent/50";
 
   return (
-    <Sidebar className={collapsed ? "w-16" : "w-64"} collapsible>
+    <Sidebar>
       <SidebarHeader className="p-4">
-        {!collapsed && (
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <GraduationCap className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="text-lg font-bold text-sidebar-foreground">ParentHub</span>
-          </div>
-        )}
-        {collapsed && (
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center mx-auto">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <GraduationCap className="h-5 w-5 text-primary-foreground" />
           </div>
-        )}
+          <span className="text-lg font-bold text-sidebar-foreground">UEAB Portal</span>
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
@@ -63,7 +54,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} className={getNavCls}>
                       <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      <span>{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -74,7 +65,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4">
-        {!collapsed && user && (
+        {user && (
           <div className="space-y-2">
             <div className="text-sm text-sidebar-foreground">
               <p className="font-medium">{user.name}</p>
@@ -88,14 +79,6 @@ export function AppSidebar() {
               <span>Logout</span>
             </button>
           </div>
-        )}
-        {collapsed && (
-          <button
-            onClick={logout}
-            className="p-2 hover:bg-sidebar-accent rounded-md transition-colors mx-auto"
-          >
-            <LogOut className="h-4 w-4 text-sidebar-foreground" />
-          </button>
         )}
       </SidebarFooter>
     </Sidebar>

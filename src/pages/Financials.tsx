@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,35 +7,35 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 export default function Financials() {
   const financialSummary = [
-    { title: "Total Paid", value: "$2,450", description: "This year", icon: DollarSign, color: "text-green-600", bgColor: "bg-green-50" },
-    { title: "Outstanding", value: "$250", description: "Due soon", icon: AlertTriangle, color: "text-orange-600", bgColor: "bg-orange-50" },
-    { title: "Next Payment", value: "$125", description: "Feb 1st", icon: Calendar, color: "text-blue-600", bgColor: "bg-blue-50" },
-    { title: "Payment Method", value: "Auto", description: "Credit Card", icon: CreditCard, color: "text-purple-600", bgColor: "bg-purple-50" },
+    { title: "Total Paid", value: "KSh 245,000", description: "This year", icon: DollarSign, color: "text-green-600", bgColor: "bg-green-50" },
+    { title: "Outstanding", value: "KSh 25,000", description: "Due soon", icon: AlertTriangle, color: "text-orange-600", bgColor: "bg-orange-50" },
+    { title: "Next Payment", value: "KSh 50,000", description: "March 1st", icon: Calendar, color: "text-blue-600", bgColor: "bg-blue-50" },
+    { title: "Payment Method", value: "M-Pesa", description: "Mobile Money", icon: CreditCard, color: "text-purple-600", bgColor: "bg-purple-50" },
   ];
 
   const transactions = [
-    { id: "TXN001", date: "2024-01-15", description: "Tuition Fee - January", amount: 450, status: "Paid", type: "Tuition" },
-    { id: "TXN002", date: "2024-01-10", description: "Library Fee", amount: 25, status: "Paid", type: "Library" },
-    { id: "TXN003", date: "2024-01-08", description: "Sports Equipment", amount: 85, status: "Paid", type: "Equipment" },
-    { id: "TXN004", date: "2024-01-05", description: "Lab Fee - Chemistry", amount: 35, status: "Paid", type: "Lab" },
-    { id: "TXN005", date: "2024-02-01", description: "Tuition Fee - February", amount: 450, status: "Pending", type: "Tuition" },
-    { id: "TXN006", date: "2024-02-01", description: "Activity Fee", amount: 75, status: "Pending", type: "Activity" },
+    { id: "TXN001", date: "2024-01-15", description: "Tuition Fee - Semester 1", amount: 45000, status: "Paid", type: "Tuition" },
+    { id: "TXN002", date: "2024-01-10", description: "Library Fee", amount: 2500, status: "Paid", type: "Library" },
+    { id: "TXN003", date: "2024-01-08", description: "Lab Equipment Fee", amount: 8500, status: "Paid", type: "Laboratory" },
+    { id: "TXN004", date: "2024-01-05", description: "Registration Fee", amount: 3500, status: "Paid", type: "Registration" },
+    { id: "TXN005", date: "2024-03-01", description: "Tuition Fee - Semester 2", amount: 45000, status: "Pending", type: "Tuition" },
+    { id: "TXN006", date: "2024-03-01", description: "Activity Fee", amount: 7500, status: "Pending", type: "Activity" },
   ];
 
   const monthlyData = [
-    { month: 'Sep', amount: 525 },
-    { month: 'Oct', amount: 485 },
-    { month: 'Nov', amount: 510 },
-    { month: 'Dec', amount: 495 },
-    { month: 'Jan', amount: 595 },
+    { month: 'Sep', amount: 52500 },
+    { month: 'Oct', amount: 48500 },
+    { month: 'Nov', amount: 51000 },
+    { month: 'Dec', amount: 49500 },
+    { month: 'Jan', amount: 59500 },
   ];
 
   const expenseBreakdown = [
-    { name: 'Tuition', value: 1800, color: '#3b82f6' },
-    { name: 'Books & Supplies', value: 350, color: '#10b981' },
-    { name: 'Activities', value: 200, color: '#f59e0b' },
-    { name: 'Lab Fees', value: 150, color: '#ef4444' },
-    { name: 'Others', value: 100, color: '#8b5cf6' },
+    { name: 'Tuition', value: 180000, color: '#3b82f6' },
+    { name: 'Accommodation', value: 35000, color: '#10b981' },
+    { name: 'Books & Supplies', value: 20000, color: '#f59e0b' },
+    { name: 'Lab Fees', value: 15000, color: '#ef4444' },
+    { name: 'Others', value: 10000, color: '#8b5cf6' },
   ];
 
   const getStatusColor = (status: string) => {
@@ -64,7 +63,7 @@ export default function Financials() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold">Financial Overview</h1>
         <p className="text-muted-foreground">
-          Track school fees, payments, and financial activities for your child's education.
+          Track university fees, payments, and financial activities for your UEAB education.
         </p>
       </div>
 
@@ -99,7 +98,7 @@ export default function Financials() {
               <div className="flex justify-between items-center">
                 <div>
                   <CardTitle>Recent Transactions</CardTitle>
-                  <CardDescription>All payment activities and school fees</CardDescription>
+                  <CardDescription>All payment activities and university fees</CardDescription>
                 </div>
                 <Button variant="outline">
                   <Download className="h-4 w-4 mr-2" />
@@ -123,7 +122,7 @@ export default function Financials() {
                       </div>
                     </div>
                     <div className="text-right space-y-1">
-                      <p className="font-bold">${transaction.amount}</p>
+                      <p className="font-bold">KSh {transaction.amount.toLocaleString()}</p>
                       <div className="flex space-x-2">
                         <Badge className={getStatusColor(transaction.status)}>
                           {transaction.status}
@@ -152,8 +151,8 @@ export default function Financials() {
                   <BarChart data={monthlyData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => [`$${value}`, 'Amount']} />
+                    <YAxis tickFormatter={(value) => `KSh ${value}`}/>
+                    <Tooltip formatter={(value) => [`KSh ${value.toLocaleString()}`, 'Amount']} />
                     <Bar dataKey="amount" fill="#3b82f6" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -181,7 +180,7 @@ export default function Financials() {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => [`$${value}`, 'Amount']} />
+                    <Tooltip formatter={(value) => [`KSh ${value.toLocaleString()}`, 'Amount']} />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -205,7 +204,7 @@ export default function Financials() {
                       <span className="font-medium">{category.name}</span>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold">${category.value}</p>
+                      <p className="font-bold">KSh {category.value.toLocaleString()}</p>
                       <p className="text-xs text-muted-foreground">
                         {((category.value / expenseBreakdown.reduce((a, b) => a + b.value, 0)) * 100).toFixed(1)}%
                       </p>
@@ -227,15 +226,15 @@ export default function Financials() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
                   <span>Total Paid:</span>
-                  <span className="font-bold">$2,450.00</span>
+                  <span className="font-bold">KSh 245,000.00</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Outstanding:</span>
-                  <span className="font-bold text-orange-600">$250.00</span>
+                  <span className="font-bold text-orange-600">KSh 25,000.00</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Total Due:</span>
-                  <span className="font-bold">$2,700.00</span>
+                  <span className="font-bold">KSh 270,000.00</span>
                 </div>
                 <Button className="w-full mt-4">
                   <Download className="h-4 w-4 mr-2" />

@@ -10,16 +10,16 @@ export default function Dashboard() {
 
   const stats = [
     {
-      title: "Overall Grade",
-      value: "A-",
-      description: "85% Average",
+      title: "Overall GPA",
+      value: "3.2",
+      description: "Current semester",
       icon: GraduationCap,
       color: "text-green-600",
       bgColor: "bg-green-50",
     },
     {
       title: "Attendance Rate",
-      value: "96%",
+      value: "92%",
       description: "This semester",
       icon: Calendar,
       color: "text-blue-600",
@@ -27,16 +27,16 @@ export default function Dashboard() {
     },
     {
       title: "Outstanding Balance",
-      value: "$250",
-      description: "Due next week",
+      value: "KSh 25,000",
+      description: "Due next month",
       icon: DollarSign,
       color: "text-orange-600",
       bgColor: "bg-orange-50",
     },
     {
-      title: "Progress Trend",
-      value: "+12%",
-      description: "From last month",
+      title: "Academic Progress",
+      value: "+8%",
+      description: "From last semester",
       icon: TrendingUp,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
@@ -44,10 +44,10 @@ export default function Dashboard() {
   ];
 
   const recentActivities = [
-    { subject: "Mathematics", grade: "A", date: "2024-01-15", type: "Test" },
-    { subject: "Science", grade: "B+", date: "2024-01-12", type: "Assignment" },
-    { subject: "English", grade: "A-", date: "2024-01-10", type: "Essay" },
-    { subject: "History", grade: "A", date: "2024-01-08", type: "Project" },
+    { subject: "Business Statistics", grade: "B+", date: "2024-01-15", type: "CAT 2" },
+    { subject: "Financial Accounting", grade: "A-", date: "2024-01-12", type: "Assignment" },
+    { subject: "Business Communication", grade: "A", date: "2024-01-10", type: "Presentation" },
+    { subject: "Economics", grade: "B", date: "2024-01-08", type: "Quiz" },
   ];
 
   return (
@@ -55,7 +55,7 @@ export default function Dashboard() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold">Welcome back, {user?.name}!</h1>
         <p className="text-muted-foreground">
-          Here's an overview of your children's academic progress.
+          Here's an overview of your academic progress at UEAB.
         </p>
       </div>
 
@@ -77,7 +77,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Children Overview */}
+      {/* Student Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {user?.children.map((child) => (
           <Card key={child.id}>
@@ -88,7 +88,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <CardTitle className="text-lg">{child.name}</CardTitle>
-                  <CardDescription>{child.grade} • {child.class}</CardDescription>
+                  <CardDescription>Year {child.grade} • {child.class}</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -96,20 +96,20 @@ export default function Dashboard() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Academic Performance</span>
-                  <span>85%</span>
+                  <span>78%</span>
                 </div>
-                <Progress value={85} className="h-2" />
+                <Progress value={78} className="h-2" />
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Attendance Rate</span>
-                  <span>96%</span>
+                  <span>92%</span>
                 </div>
-                <Progress value={96} className="h-2" />
+                <Progress value={92} className="h-2" />
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">Latest Grade:</span>
-                <Badge variant="secondary">A- Mathematics</Badge>
+                <Badge variant="secondary">B+ Business Statistics</Badge>
               </div>
             </CardContent>
           </Card>
@@ -123,7 +123,7 @@ export default function Dashboard() {
             <BookOpen className="h-5 w-5" />
             <span>Recent Academic Activities</span>
           </CardTitle>
-          <CardDescription>Latest grades and assignments</CardDescription>
+          <CardDescription>Latest grades and assessments</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

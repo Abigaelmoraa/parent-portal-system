@@ -9,50 +9,50 @@ export default function Index() {
     {
       icon: BarChart3,
       title: "Academic Results",
-      description: "Track grades, test scores, and academic progress across all subjects"
+      description: "Track grades, CATs, exams, and academic progress across all subjects and semesters"
     },
     {
       icon: Calendar,
       title: "Attendance Monitoring",
-      description: "Real-time attendance tracking with detailed reports and notifications"
+      description: "Real-time attendance tracking for lectures, tutorials, and practical sessions"
     },
     {
       icon: DollarSign,
       title: "Financial Management",
-      description: "Manage school fees, payments, and financial records all in one place"
+      description: "Manage school fees, payments, and financial records - all amounts in KSh"
     },
     {
       icon: Users,
-      title: "Multi-Child Support",
-      description: "Monitor multiple children's progress from a single parent account"
+      title: "Parent-Student Connect",
+      description: "Parents can monitor their child's university progress and academic performance"
     },
     {
       icon: Shield,
       title: "Secure & Private",
-      description: "Your family's data is protected with enterprise-grade security"
+      description: "Your academic and financial data is protected with enterprise-grade security"
     },
     {
       icon: Star,
       title: "Real-time Updates",
-      description: "Get instant notifications about grades, attendance, and school activities"
+      description: "Get instant notifications about grades, attendance, and university activities"
     }
   ];
 
   const testimonials = [
     {
-      name: "Sarah Johnson",
-      role: "Parent of 2 students",
-      content: "ParentHub has transformed how I stay connected with my children's education. I love getting real-time updates!"
+      name: "Grace Wanjiku",
+      role: "Parent of Business Student",
+      content: "UEAB Portal has made it so easy to track my daughter's progress at university. I love the real-time updates!"
     },
     {
-      name: "Michael Chen",
-      role: "Parent of 1 student",
-      content: "The financial tracking feature is incredible. I can see exactly where every dollar goes for my child's education."
+      name: "David Kiprotich",
+      role: "Parent of Computer Science Student",
+      content: "The financial tracking feature is excellent. I can see exactly where every shilling goes for my son's education."
     },
     {
-      name: "Lisa Rodriguez",
-      role: "Parent of 3 students",
-      content: "Managing three kids' school activities was chaotic until I found ParentHub. Now everything is organized!"
+      name: "Mary Achieng",
+      role: "Parent of Nursing Student",
+      content: "Managing my child's university activities was complex until I found UEAB Portal. Now everything is organized!"
     }
   ];
 
@@ -65,7 +65,7 @@ export default function Index() {
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <GraduationCap className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold">ParentHub</span>
+            <span className="text-xl font-bold">UEAB Portal</span>
           </div>
           <div className="space-x-4">
             <Button variant="ghost" asChild>
@@ -82,12 +82,12 @@ export default function Index() {
       <section className="px-6 py-20">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            Stay Connected to Your Child's
-            <span className="text-primary block mt-2">Educational Journey</span>
+            University of Eastern Africa, Baraton
+            <span className="text-primary block mt-2">Student Progress Portal</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            ParentHub is the complete platform for parents to track academic results, monitor attendance, 
-            manage school finances, and stay engaged with their child's education.
+            UEAB Portal is the complete platform for parents and students to track academic results, monitor attendance, 
+            manage university finances, and stay engaged with your educational journey.
           </p>
           <div className="space-x-4">
             <Button size="lg" asChild>
@@ -108,10 +108,10 @@ export default function Index() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Everything You Need to Stay Connected
+              Everything You Need for University Success
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Comprehensive tools designed specifically for parents to monitor and support their child's academic success.
+              Comprehensive tools designed specifically for UEAB students and parents to monitor and support academic success.
             </p>
           </div>
           
@@ -140,16 +140,16 @@ export default function Index() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-4xl font-bold mb-2">10K+</div>
-              <div className="text-lg opacity-90">Active Parents</div>
+              <div className="text-4xl font-bold mb-2">3K+</div>
+              <div className="text-lg opacity-90">Active Students</div>
             </div>
             <div>
-              <div className="text-4xl font-bold mb-2">25K+</div>
-              <div className="text-lg opacity-90">Students Tracked</div>
+              <div className="text-4xl font-bold mb-2">2K+</div>
+              <div className="text-lg opacity-90">Parent Accounts</div>
             </div>
             <div>
-              <div className="text-4xl font-bold mb-2">500+</div>
-              <div className="text-lg opacity-90">Partner Schools</div>
+              <div className="text-4xl font-bold mb-2">12</div>
+              <div className="text-lg opacity-90">Faculties</div>
             </div>
             <div>
               <div className="text-4xl font-bold mb-2">99.9%</div>
@@ -164,10 +164,10 @@ export default function Index() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Trusted by Thousands of Parents
+              Trusted by UEAB Families
             </h2>
             <p className="text-lg text-gray-600">
-              See what other parents are saying about ParentHub
+              See what other parents are saying about UEAB Portal
             </p>
           </div>
           
@@ -199,7 +199,7 @@ export default function Index() {
             Ready to Get Started?
           </h2>
           <p className="text-lg text-gray-600 mb-8">
-            Join thousands of parents who are already using ParentHub to stay connected with their child's education.
+            Join UEAB students and parents who are already using our portal to stay connected with university education.
           </p>
           <div className="space-x-4">
             <Button size="lg" asChild>
@@ -223,10 +223,10 @@ export default function Index() {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <GraduationCap className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold">ParentHub</span>
+              <span className="text-xl font-bold">UEAB Portal</span>
             </div>
             <div className="text-sm text-gray-400">
-              © 2024 ParentHub. All rights reserved.
+              © 2024 University of Eastern Africa, Baraton. All rights reserved.
             </div>
           </div>
         </div>
