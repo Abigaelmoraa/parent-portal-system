@@ -1,5 +1,5 @@
 
-import { Home, GraduationCap, Calendar, CreditCard, User, LogOut } from "lucide-react";
+import { Home, GraduationCap, Calendar, CreditCard, User, LogOut, Users } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -18,6 +18,7 @@ import {
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
+  { title: "Students", url: "/students", icon: Users },
   { title: "Academic Results", url: "/results", icon: GraduationCap },
   { title: "Attendance", url: "/attendance", icon: Calendar },
   { title: "Financials", url: "/financials", icon: CreditCard },

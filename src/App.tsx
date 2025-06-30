@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
+import Students from "./pages/Students";
 import Results from "./pages/Results";
 import Attendance from "./pages/Attendance";
 import Financials from "./pages/Financials";
@@ -67,6 +68,7 @@ const App = () => (
               <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
               <Route path="/results" element={<ProtectedRoute><Results /></ProtectedRoute>} />
               <Route path="/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
               <Route path="/financials" element={<ProtectedRoute><Financials /></ProtectedRoute>} />
