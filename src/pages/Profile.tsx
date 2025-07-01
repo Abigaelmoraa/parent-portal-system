@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -100,7 +99,12 @@ export default function Profile() {
           <CardContent className="space-y-4">
             <div className="flex items-center space-x-2 text-sm">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>Member since January 2024</span>
+              <span>
+                Member since{" "}
+                {user?.created_at
+                  ? new Date(user.created_at).toLocaleString("default", { month: "long", year: "numeric" })
+                  : "Unknown"}
+              </span>
             </div>
             <div className="flex items-center space-x-2 text-sm">
               <GraduationCap className="h-4 w-4 text-muted-foreground" />

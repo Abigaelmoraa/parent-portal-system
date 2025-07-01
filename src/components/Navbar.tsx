@@ -1,4 +1,3 @@
-
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Bell, Search } from "lucide-react";
@@ -13,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import Notifications from "@/components/Notifications";
 
 export function Navbar() {
   const { user, logout } = useAuth();
@@ -34,6 +34,8 @@ export function Navbar() {
         <Button variant="ghost" size="icon">
           <Bell className="h-5 w-5" />
         </Button>
+
+        <Notifications />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

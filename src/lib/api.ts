@@ -117,6 +117,24 @@ export interface DashboardData {
   };
 }
 
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface Notification {
+  id: number;
+  title?: string;
+  message: string;
+  type?: string;
+  is_read: boolean;
+  created_at: string;
+}
+
 // Helper function to get auth token
 const getAuthToken = (): string | null => {
   return localStorage.getItem('parenthub_token');
@@ -221,6 +239,15 @@ class ApiService {
     const endpoint = studentId ? `/financials/payments?studentId=${studentId}` : '/financials/payments';
     const response = await this.request(endpoint);
     return response.data.payments || response.data;
+  }
+
+  async getNotifications(page = 1, limit = 10): Promise<{ notifications: Notification[]; pagination: Pagination }> {
+    const response = await this.request(`/dashboard/notifications?page=${page}&limit=${limit}`);
+    return response.data;
+  }
+
+  async markNotificationRead(id: number): Promise<void> {
+    await this.request(`/dashboard/notifications/${id}/read`, { method: 'PUT' });
   }
 }
 
