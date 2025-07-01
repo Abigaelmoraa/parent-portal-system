@@ -1,17 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  children: {
-    id: string;
-    name: string;
-    grade: string;
-    class: string;
-  }[];
-}
+import { api, User } from '@/lib/api';
 
 interface AuthContextType {
   user: User | null;
@@ -37,9 +26,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // Check if user is already logged in
+    const token = localStorage.getItem('parenthub_token');
     const savedUser = localStorage.getItem('parenthub_user');
-    if (savedUser) {
+    
+    if (token && savedUser) {
       setUser(JSON.parse(savedUser));
+      // Verify token is still valid
+      api.getProfile().catch(() => {
+        // Token is invalid, clear storage
+        localStorage.removeItem('parenthub_token');
+        localStorage.removeItem('parenthub_user');
+        setUser(null);
+      });
     }
     setIsLoading(false);
   }, []);
@@ -47,58 +45,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock successful login
-    const mockUser: User = {
-      id: '1',
-      name: 'Sarah Johnson',
-      email: email,
-      children: [
-        {
-          id: '1',
-          name: 'Emma Johnson',
-          grade: '10th Grade',
-          class: 'Class A'
-        },
-        {
-          id: '2',
-          name: 'Alex Johnson',
-          grade: '8th Grade',
-          class: 'Class B'
-        }
-      ]
-    };
-    
-    setUser(mockUser);
-    localStorage.setItem('parenthub_user', JSON.stringify(mockUser));
-    setIsLoading(false);
-    return true;
+    try {
+      const response = await api.login(email, password);
+      const { user, token } = response;
+      
+      setUser(user);
+      localStorage.setItem('parenthub_token', token);
+      localStorage.setItem('parenthub_user', JSON.stringify(user));
+      setIsLoading(false);
+      return true;
+    } catch (error) {
+      setIsLoading(false);
+      throw error;
+    }
   };
 
   const signup = async (name: string, email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock successful signup
-    const mockUser: User = {
-      id: '1',
-      name: name,
-      email: email,
-      children: []
-    };
-    
-    setUser(mockUser);
-    localStorage.setItem('parenthub_user', JSON.stringify(mockUser));
-    setIsLoading(false);
-    return true;
+    try {
+      const response = await api.signup(name, email, password);
+      const { user, token } = response;
+      
+      setUser(user);
+      localStorage.setItem('parenthub_token', token);
+      localStorage.setItem('parenthub_user', JSON.stringify(user));
+      setIsLoading(false);
+      return true;
+    } catch (error) {
+      setIsLoading(false);
+      throw error;
+    }
   };
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('parenthub_token');
     localStorage.removeItem('parenthub_user');
   };
 

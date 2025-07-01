@@ -1,36 +1,69 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, CheckCircle, XCircle, AlertCircle, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
-import { useState } from "react";
+import { api, Attendance as AttendanceType } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function Attendance() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [attendance, setAttendance] = useState<AttendanceType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAttendance = async () => {
+      try {
+        const data = await api.getAttendance();
+        setAttendance(data);
+      } catch (error) {
+        toast.error("Failed to load attendance data");
+        console.error("Attendance error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAttendance();
+  }, []);
+
+  // Calculate attendance statistics
+  const totalDays = attendance.length;
+  const presentCount = attendance.filter(a => a.status === 'Present').length;
+  const absentCount = attendance.filter(a => a.status === 'Absent').length;
+  const lateCount = attendance.filter(a => a.status === 'Late').length;
+  const excusedCount = attendance.filter(a => a.status === 'Excused').length;
 
   const attendanceStats = [
-    { title: "Present", value: "92", percentage: 96, color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
-    { title: "Absent", value: "3", percentage: 3, color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
-    { title: "Late", value: "1", percentage: 1, color: "text-yellow-600", bgColor: "bg-yellow-50", icon: AlertCircle },
-    { title: "Total Days", value: "96", percentage: 100, color: "text-blue-600", bgColor: "bg-blue-50", icon: CalendarIcon },
+    { title: "Present", value: presentCount.toString(), percentage: totalDays > 0 ? Math.round((presentCount / totalDays) * 100) : 0, color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
+    { title: "Absent", value: absentCount.toString(), percentage: totalDays > 0 ? Math.round((absentCount / totalDays) * 100) : 0, color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
+    { title: "Late", value: lateCount.toString(), percentage: totalDays > 0 ? Math.round((lateCount / totalDays) * 100) : 0, color: "text-yellow-600", bgColor: "bg-yellow-50", icon: AlertCircle },
+    { title: "Total Days", value: totalDays.toString(), percentage: 100, color: "text-blue-600", bgColor: "bg-blue-50", icon: CalendarIcon },
   ];
 
-  const recentAttendance = [
-    { date: "2024-01-15", status: "Present", time: "8:00 AM", subject: "Mathematics" },
-    { date: "2024-01-12", status: "Present", time: "8:00 AM", subject: "Science" },
-    { date: "2024-01-11", status: "Late", time: "8:15 AM", subject: "English" },
-    { date: "2024-01-10", status: "Present", time: "8:00 AM", subject: "History" },
-    { date: "2024-01-09", status: "Absent", time: "-", subject: "Geography" },
-    { date: "2024-01-08", status: "Present", time: "8:00 AM", subject: "Art" },
-  ];
+  const recentAttendance = attendance.slice(0, 6).map(record => ({
+    date: record.date,
+    status: record.status,
+    time: record.time_in || '-',
+    subject: record.subject_name
+  }));
 
-  const monthlyAttendance = [
-    { month: "September", present: 20, absent: 2, late: 0, total: 22 },
-    { month: "October", present: 21, absent: 1, late: 1, total: 23 },
-    { month: "November", present: 22, absent: 0, late: 0, total: 22 },
-    { month: "December", present: 19, absent: 0, late: 0, total: 19 },
-    { month: "January", present: 10, absent: 0, late: 0, total: 10 },
-  ];
+  // Calculate monthly attendance
+  const monthlyAttendance = attendance.reduce((acc, record) => {
+    const month = new Date(record.date).toLocaleDateString('en-US', { month: 'long' });
+    if (!acc[month]) {
+      acc[month] = { present: 0, absent: 0, late: 0, excused: 0, total: 0 };
+    }
+    acc[month][record.status.toLowerCase() as keyof typeof acc[typeof month]]++;
+    acc[month].total++;
+    return acc;
+  }, {} as Record<string, { present: number; absent: number; late: number; excused: number; total: number }>);
+
+  const monthlyAttendanceArray = Object.entries(monthlyAttendance).map(([month, data]) => ({
+    month,
+    ...data
+  }));
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -49,6 +82,19 @@ export default function Attendance() {
       default: return <CalendarIcon className="h-4 w-4" />;
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span>Loading attendance data...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -137,7 +183,7 @@ export default function Attendance() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {monthlyAttendance.map((month, index) => (
+            {monthlyAttendanceArray.map((month, index) => (
               <div key={index} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">

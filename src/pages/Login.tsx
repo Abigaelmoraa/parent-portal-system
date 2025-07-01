@@ -31,7 +31,8 @@ export default function Login() {
         navigate("/dashboard");
       }
     } catch (error) {
-      toast.error("Invalid credentials. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : "Invalid credentials. Please try again.";
+      toast.error(errorMessage);
     }
   };
 

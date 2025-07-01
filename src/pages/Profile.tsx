@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,21 +8,39 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { api, Student } from "@/lib/api";
 import { Separator } from "@/components/ui/separator";
-import { User, Mail, Phone, MapPin, Calendar, GraduationCap, Edit, Save } from "lucide-react";
-import { useState } from "react";
+import { User, Mail, Phone, MapPin, Calendar, GraduationCap, Edit, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Profile() {
   const { user } = useAuth();
+  const [students, setStudents] = useState<Student[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    phone: '+1 (555) 123-4567',
-    address: '123 Main Street, Anytown, ST 12345',
-    emergencyContact: 'John Smith - +1 (555) 987-6543',
+    phone: user?.phone || '',
+    address: user?.address || '',
+    emergencyContact: '',
   });
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const data = await api.getStudents();
+        setStudents(data);
+      } catch (error) {
+        toast.error("Failed to load student data");
+        console.error("Profile error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStudents();
+  }, []);
 
   const handleSave = () => {
     setIsEditing(false);
@@ -33,11 +52,24 @@ export default function Profile() {
     setFormData({
       name: user?.name || '',
       email: user?.email || '',
-      phone: '+1 (555) 123-4567',
-      address: '123 Main Street, Anytown, ST 12345',
-      emergencyContact: 'John Smith - +1 (555) 987-6543',
+      phone: user?.phone || '',
+      address: user?.address || '',
+      emergencyContact: '',
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span>Loading profile data...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -72,7 +104,7 @@ export default function Profile() {
             </div>
             <div className="flex items-center space-x-2 text-sm">
               <GraduationCap className="h-4 w-4 text-muted-foreground" />
-              <span>{user?.children.length} Children Enrolled</span>
+              <span>{students.length} Children Enrolled</span>
             </div>
           </CardContent>
         </Card>
@@ -195,24 +227,31 @@ export default function Profile() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {user?.children.map((child, index) => (
-                  <div key={child.id} className="p-4 bg-muted/50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-primary/20">
-                            {child.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{child.name}</p>
-                          <p className="text-sm text-muted-foreground">{child.grade} • {child.class}</p>
+                {students.length > 0 ? (
+                  students.map((student, index) => (
+                    <div key={student.id} className="p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarFallback className="bg-primary/20">
+                              {student.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">{student.name}</p>
+                            <p className="text-sm text-muted-foreground">{student.grade} • {student.class} • {student.course}</p>
+                          </div>
                         </div>
+                        <Badge variant="outline">Active</Badge>
                       </div>
-                      <Badge variant="outline">Active</Badge>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <GraduationCap className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No students enrolled</p>
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>

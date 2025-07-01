@@ -1,58 +1,87 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
-import { GraduationCap, Calendar, DollarSign, TrendingUp, User, BookOpen } from "lucide-react";
+import { api, DashboardData } from "@/lib/api";
+import { GraduationCap, Calendar, DollarSign, TrendingUp, User, BookOpen, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const data = await api.getDashboardData();
+        setDashboardData(data);
+      } catch (error) {
+        toast.error("Failed to load dashboard data");
+        console.error("Dashboard error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span>Loading dashboard...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const stats = [
     {
-      title: "Overall GPA",
-      value: "3.2",
-      description: "Current semester",
-      icon: GraduationCap,
+      title: "Total Students",
+      value: dashboardData?.total_students?.toString() || "0",
+      description: "Enrolled students",
+      icon: User,
       color: "text-emerald-600",
       bgColor: "bg-gradient-to-br from-emerald-50 to-emerald-100",
       iconBg: "bg-emerald-500",
     },
     {
-      title: "Attendance Rate",
-      value: "92%",
-      description: "This semester",
-      icon: Calendar,
+      title: "Total Results",
+      value: dashboardData?.total_results?.toString() || "0",
+      description: "Academic records",
+      icon: GraduationCap,
       color: "text-blue-600",
       bgColor: "bg-gradient-to-br from-blue-50 to-blue-100",
       iconBg: "bg-blue-500",
     },
     {
-      title: "Outstanding Balance",
-      value: "KSh 25,000",
-      description: "Due next month",
-      icon: DollarSign,
+      title: "Attendance Records",
+      value: dashboardData?.total_attendance?.toString() || "0",
+      description: "This semester",
+      icon: Calendar,
       color: "text-orange-600",
       bgColor: "bg-gradient-to-br from-orange-50 to-orange-100",
       iconBg: "bg-orange-500",
     },
     {
-      title: "Academic Progress",
-      value: "+8%",
-      description: "From last semester",
-      icon: TrendingUp,
+      title: "Outstanding Balance",
+      value: `KSh ${dashboardData?.fee_summary?.outstanding_fees?.toLocaleString() || "0"}`,
+      description: "Total outstanding",
+      icon: DollarSign,
       color: "text-purple-600",
       bgColor: "bg-gradient-to-br from-purple-50 to-purple-100",
       iconBg: "bg-purple-500",
     },
   ];
 
-  const recentActivities = [
-    { subject: "Business Statistics", grade: "B+", date: "2024-01-15", type: "CAT 2" },
-    { subject: "Financial Accounting", grade: "A-", date: "2024-01-12", type: "Assignment" },
-    { subject: "Business Communication", grade: "A", date: "2024-01-10", type: "Presentation" },
-    { subject: "Economics", grade: "B", date: "2024-01-08", type: "Quiz" },
-  ];
+  const recentActivities = dashboardData?.recent_results?.slice(0, 4) || [];
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -81,44 +110,48 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Student Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {user?.children.map((child) => (
-          <Card key={child.id} className="bg-gradient-to-br from-indigo-50 to-indigo-100 border-0 shadow-lg">
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center shadow-sm">
-                  <User className="h-5 w-5 text-white" />
+      {/* Recent Activities */}
+      <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2 text-slate-800">
+            <div className="w-8 h-8 bg-slate-600 rounded-lg flex items-center justify-center">
+              <BookOpen className="h-4 w-4 text-white" />
+            </div>
+            <span>Recent Academic Activities</span>
+          </CardTitle>
+          <CardDescription className="text-slate-600">Latest grades and assessments</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {recentActivities.length > 0 ? (
+              recentActivities.map((activity, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-white/70 rounded-lg shadow-sm border border-slate-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center">
+                      <GraduationCap className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-800">{activity.subject_name}</p>
+                      <p className="text-sm text-slate-600">{activity.assessment_type}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant={activity.grade?.startsWith('A') ? 'default' : 'secondary'} className="mb-1">
+                      {activity.grade || `${activity.score}/${activity.max_score}`}
+                    </Badge>
+                    <p className="text-xs text-slate-500">{new Date(activity.assessment_date).toLocaleDateString()}</p>
+                  </div>
                 </div>
-                <div>
-                  <CardTitle className="text-lg text-indigo-900">{child.name}</CardTitle>
-                  <CardDescription className="text-indigo-700">Year {child.grade} • {child.class}</CardDescription>
-                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-slate-500">
+                <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No recent academic activities</p>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm text-indigo-800">
-                  <span>Academic Performance</span>
-                  <span>78%</span>
-                </div>
-                <Progress value={78} className="h-2" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm text-indigo-800">
-                  <span>Attendance Rate</span>
-                  <span>92%</span>
-                </div>
-                <Progress value={92} className="h-2" />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-indigo-800">Latest Grade:</span>
-                <Badge className="bg-indigo-200 text-indigo-800 hover:bg-indigo-300">B+ Business Statistics</Badge>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Recent Activities */}
       <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-0 shadow-lg">
@@ -140,15 +173,15 @@ export default function Dashboard() {
                     <GraduationCap className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <p className="font-medium text-slate-800">{activity.subject}</p>
-                    <p className="text-sm text-slate-600">{activity.type}</p>
+                    <p className="font-medium text-slate-800">{activity.subject_name}</p>
+                    <p className="text-sm text-slate-600">{activity.assessment_type}</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <Badge variant={activity.grade.startsWith('A') ? 'default' : 'secondary'} className="mb-1">
                     {activity.grade}
                   </Badge>
-                  <p className="text-xs text-slate-500">{activity.date}</p>
+                                      <p className="text-xs text-slate-500">{new Date(activity.assessment_date).toLocaleDateString()}</p>
                 </div>
               </div>
             ))}

@@ -1,16 +1,48 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DollarSign, AlertTriangle, Download, Calendar, Receipt, FileText } from "lucide-react";
+import { api, FeeStructure, FeePayment } from "@/lib/api";
+import { DollarSign, AlertTriangle, Download, Calendar, Receipt, FileText, Loader2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { toast } from "sonner";
 
 export default function Financials() {
+  const [feeStructure, setFeeStructure] = useState<FeeStructure[]>([]);
+  const [feePayments, setFeePayments] = useState<FeePayment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFinancialData = async () => {
+      try {
+        const [structureData, paymentsData] = await Promise.all([
+          api.getFeeStructure(),
+          api.getFeePayments()
+        ]);
+        setFeeStructure(structureData);
+        setFeePayments(paymentsData);
+      } catch (error) {
+        toast.error("Failed to load financial data");
+        console.error("Financials error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFinancialData();
+  }, []);
+
+  // Calculate financial summary
+  const totalFees = feeStructure.reduce((sum, fee) => sum + fee.amount, 0);
+  const totalPaid = feePayments.filter(p => p.status === 'Paid').reduce((sum, p) => sum + p.amount_paid, 0);
+  const outstandingFees = totalFees - totalPaid;
+
   const financialSummary = [
     { 
       title: "Total Fees Paid", 
-      value: "KSh 180,000", 
+      value: `KSh ${totalPaid.toLocaleString()}`, 
       description: "This academic year", 
       icon: DollarSign, 
       color: "text-emerald-600", 
@@ -19,26 +51,26 @@ export default function Financials() {
     },
     { 
       title: "Outstanding Fees", 
-      value: "KSh 45,000", 
-      description: "Due March 15th", 
+      value: `KSh ${outstandingFees.toLocaleString()}`, 
+      description: "Total outstanding", 
       icon: AlertTriangle, 
       color: "text-orange-600", 
       bgColor: "bg-gradient-to-br from-orange-50 to-orange-100",
       iconBg: "bg-orange-500"
     },
     { 
-      title: "Next Payment", 
-      value: "KSh 45,000", 
-      description: "Semester 2 fees", 
+      title: "Total Fee Structure", 
+      value: `KSh ${totalFees.toLocaleString()}`, 
+      description: "Full academic year", 
       icon: Calendar, 
       color: "text-blue-600", 
       bgColor: "bg-gradient-to-br from-blue-50 to-blue-100",
       iconBg: "bg-blue-500"
     },
     { 
-      title: "Total Annual Fees", 
-      value: "KSh 225,000", 
-      description: "Full academic year", 
+      title: "Payment Rate", 
+      value: `${totalFees > 0 ? Math.round((totalPaid / totalFees) * 100) : 0}%`, 
+      description: "Completion rate", 
       icon: Receipt, 
       color: "text-purple-600", 
       bgColor: "bg-gradient-to-br from-purple-50 to-purple-100",
@@ -46,27 +78,44 @@ export default function Financials() {
     },
   ];
 
-  const feeTransactions = [
-    { id: "FEE001", date: "2024-01-15", description: "Tuition Fee - Semester 1", amount: 85000, status: "Paid", type: "Tuition" },
-    { id: "FEE002", date: "2024-01-10", description: "Accommodation Fee - Semester 1", amount: 35000, status: "Paid", type: "Accommodation" },
-    { id: "FEE003", date: "2024-01-08", description: "Library & Lab Fee", amount: 12000, status: "Paid", type: "Facilities" },
-    { id: "FEE004", date: "2024-01-05", description: "Registration & Activity Fee", amount: 8000, status: "Paid", type: "Registration" },
-    { id: "FEE005", date: "2024-03-15", description: "Tuition Fee - Semester 2", amount: 85000, status: "Pending", type: "Tuition" },
-    { id: "FEE006", date: "2024-03-15", description: "Accommodation Fee - Semester 2", amount: 35000, status: "Due", type: "Accommodation" },
-  ];
+  const feeTransactions = feePayments.map(payment => ({
+    id: payment.transaction_id,
+    date: payment.payment_date,
+    description: payment.fee_type,
+    amount: payment.amount_paid,
+    status: payment.status,
+    type: payment.payment_method
+  }));
 
-  const semesterData = [
-    { semester: 'Sep 2023', amount: 140000 },
-    { semester: 'Jan 2024', amount: 140000 },
-    { semester: 'Sep 2024', amount: 45000 },
-  ];
+  // Generate semester data from fee structure
+  const semesterData = feeStructure.reduce((acc, fee) => {
+    const semester = `${fee.semester} ${fee.academic_year}`;
+    if (!acc[semester]) {
+      acc[semester] = 0;
+    }
+    acc[semester] += fee.amount;
+    return acc;
+  }, {} as Record<string, number>);
 
-  const feeBreakdown = [
-    { name: 'Tuition Fees', value: 170000, color: '#3b82f6' },
-    { name: 'Accommodation', value: 70000, color: '#10b981' },
-    { name: 'Library & Lab', value: 12000, color: '#f59e0b' },
-    { name: 'Registration', value: 8000, color: '#ef4444' },
-  ];
+  const semesterDataArray = Object.entries(semesterData).map(([semester, amount]) => ({
+    semester,
+    amount
+  }));
+
+  // Generate fee breakdown from fee structure
+  const feeBreakdown = feeStructure.reduce((acc, fee) => {
+    if (!acc[fee.fee_type]) {
+      acc[fee.fee_type] = 0;
+    }
+    acc[fee.fee_type] += fee.amount;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const feeBreakdownArray = Object.entries(feeBreakdown).map(([name, value], index) => ({
+    name,
+    value,
+    color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'][index % 6]
+  }));
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -82,6 +131,19 @@ export default function Financials() {
     console.log(`Downloading ${reportType} report...`);
     // In a real app, this would generate and download a PDF
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span>Loading financial data...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -175,7 +237,7 @@ export default function Financials() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={semesterData}>
+                  <BarChart data={semesterDataArray}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="semester" />
                     <YAxis tickFormatter={(value) => `KSh ${value/1000}k`}/>
@@ -202,7 +264,7 @@ export default function Financials() {
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={feeBreakdown}
+                      data={feeBreakdownArray}
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
@@ -210,7 +272,7 @@ export default function Financials() {
                       dataKey="value"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     >
-                      {feeBreakdown.map((entry, index) => (
+                      {feeBreakdownArray.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>

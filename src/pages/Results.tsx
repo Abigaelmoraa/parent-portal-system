@@ -1,36 +1,78 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { TrendingUp, Award, BookOpen } from "lucide-react";
+import { api, AcademicResult } from "@/lib/api";
+import { TrendingUp, Award, BookOpen, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Results() {
-  const subjects = [
-    { name: 'Mathematics', current: 88, previous: 85, trend: 'up', tests: 8 },
-    { name: 'Science', current: 92, previous: 89, trend: 'up', tests: 6 },
-    { name: 'English', current: 85, previous: 87, trend: 'down', tests: 7 },
-    { name: 'History', current: 90, previous: 88, trend: 'up', tests: 5 },
-    { name: 'Geography', current: 87, previous: 84, trend: 'up', tests: 4 },
-    { name: 'Art', current: 94, previous: 92, trend: 'up', tests: 3 },
-  ];
+  const [results, setResults] = useState<AcademicResult[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const performanceData = [
-    { month: 'Sep', Mathematics: 82, Science: 85, English: 88, History: 86 },
-    { month: 'Oct', Mathematics: 85, Science: 87, English: 86, History: 87 },
-    { month: 'Nov', Mathematics: 87, Science: 90, English: 85, History: 89 },
-    { month: 'Dec', Mathematics: 88, Science: 92, English: 85, History: 90 },
-  ];
+  useEffect(() => {
+    const fetchResults = async () => {
+      try {
+        const data = await api.getResults();
+        setResults(data);
+      } catch (error) {
+        toast.error("Failed to load academic results");
+        console.error("Results error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const gradeDistribution = [
-    { grade: 'A+', count: 12 },
-    { grade: 'A', count: 18 },
-    { grade: 'A-', count: 8 },
-    { grade: 'B+', count: 5 },
-    { grade: 'B', count: 2 },
-    { grade: 'B-', count: 1 },
-  ];
+    fetchResults();
+  }, []);
+
+  // Group results by subject
+  const subjectResults = results.reduce((acc, result) => {
+    if (!acc[result.subject_name]) {
+      acc[result.subject_name] = [];
+    }
+    acc[result.subject_name].push(result);
+    return acc;
+  }, {} as Record<string, AcademicResult[]>);
+
+  // Calculate subject averages
+  const subjects = Object.entries(subjectResults).map(([name, results]) => {
+    const avgScore = results.reduce((sum, r) => sum + r.score, 0) / results.length;
+    const avgPercentage = (avgScore / results[0]?.max_score || 100) * 100;
+    return {
+      name,
+      current: Math.round(avgPercentage),
+      previous: Math.round(avgPercentage - 2), // Mock previous
+      trend: 'up' as const,
+      tests: results.length
+    };
+  });
+
+  // Generate performance data from actual results
+  const performanceData = Object.entries(subjectResults).map(([subject, results]) => {
+    const monthlyData: Record<string, string | number> = { month: subject };
+    results.forEach(result => {
+      const month = new Date(result.assessment_date).toLocaleDateString('en-US', { month: 'short' });
+      const percentage = (result.score / result.max_score) * 100;
+      monthlyData[month] = Math.round(percentage);
+    });
+    return monthlyData;
+  }).slice(0, 4); // Limit to 4 subjects for chart
+
+  // Calculate grade distribution from actual results
+  const gradeCounts = results.reduce((acc, result) => {
+    const grade = result.grade || getGradeLetter((result.score / result.max_score) * 100);
+    acc[grade] = (acc[grade] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const gradeDistribution = Object.entries(gradeCounts).map(([grade, count]) => ({
+    grade,
+    count
+  }));
 
   const getGradeColor = (score: number) => {
     if (score >= 90) return 'text-green-600';
@@ -51,6 +93,19 @@ export default function Results() {
     if (score >= 70) return 'C-';
     return 'F';
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span>Loading academic results...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">

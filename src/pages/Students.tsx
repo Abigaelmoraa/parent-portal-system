@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,31 +8,49 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { Separator } from "@/components/ui/separator";
-import { User, Calendar, Mail, Phone, MapPin, Edit, Save, Download } from "lucide-react";
-import { useState } from "react";
+import { api, Student } from "@/lib/api";
+import { User, Calendar, Mail, Phone, MapPin, Edit, Save, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Students() {
   const { user } = useAuth();
-  const [editingStudent, setEditingStudent] = useState<string | null>(null);
-  const [studentData, setStudentData] = useState<{[key: string]: any}>({});
+  const [students, setStudents] = useState<Student[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [editingStudent, setEditingStudent] = useState<number | null>(null);
+  const [studentData, setStudentData] = useState<{[key: number]: Partial<Student>}>({});
 
-  const handleEdit = (studentId: string, currentData: any) => {
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const data = await api.getStudents();
+        setStudents(data);
+      } catch (error) {
+        toast.error("Failed to load students");
+        console.error("Students error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStudents();
+  }, []);
+
+  const handleEdit = (studentId: number, currentData: Student) => {
     setEditingStudent(studentId);
     setStudentData({ [studentId]: currentData });
   };
 
-  const handleSave = (studentId: string) => {
+  const handleSave = (studentId: number) => {
     setEditingStudent(null);
     toast.success("Student information updated successfully!");
   };
 
-  const handleCancel = (studentId: string) => {
+  const handleCancel = (studentId: number) => {
     setEditingStudent(null);
     setStudentData({ ...studentData, [studentId]: undefined });
   };
 
-  const updateStudentField = (studentId: string, field: string, value: string) => {
+  const updateStudentField = (studentId: number, field: string, value: string) => {
     setStudentData({
       ...studentData,
       [studentId]: {
@@ -45,20 +64,18 @@ export default function Students() {
     toast.success(`Downloading report for ${studentName}`);
   };
 
-  // Mock student data with more details
-  const studentsWithDetails = user?.children.map(child => ({
-    ...child,
-    dateOfBirth: "2008-05-15",
-    admissionNumber: "UEAB/2024/001",
-    email: `${child.name.toLowerCase().replace(' ', '.')}@student.ueab.ac.ke`,
-    phone: "+254 712 345 678",
-    address: "123 Kapsabet Road, Eldoret",
-    guardian: user.name,
-    emergencyContact: "+254 722 123 456",
-    course: "Bachelor of Business Administration",
-    semester: "Semester 2",
-    academicYear: "2024/2025"
-  })) || [];
+  if (isLoading) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span>Loading students...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -70,8 +87,9 @@ export default function Students() {
       </div>
 
       <div className="space-y-6">
-        {studentsWithDetails.map((student) => (
-          <Card key={student.id} className="bg-gradient-to-br from-blue-50 to-blue-100 border-0 shadow-lg">
+        {students.length > 0 ? (
+          students.map((student) => (
+            <Card key={student.id} className="bg-gradient-to-br from-blue-50 to-blue-100 border-0 shadow-lg">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
@@ -83,14 +101,14 @@ export default function Students() {
                   <div>
                     <CardTitle className="text-xl text-blue-900">{student.name}</CardTitle>
                     <CardDescription className="text-blue-700">
-                      {student.course} • {student.semester}
+                      {student.course} • {student.semester} • {student.grade}
                     </CardDescription>
                     <div className="flex items-center space-x-4 mt-2">
                       <Badge variant="secondary" className="bg-blue-200 text-blue-800">
-                        {student.admissionNumber}
+                        {student.admission_number}
                       </Badge>
                       <Badge variant="outline" className="border-blue-300 text-blue-700">
-                        {student.academicYear}
+                        {student.academic_year}
                       </Badge>
                     </div>
                   </div>
@@ -164,14 +182,14 @@ export default function Students() {
                       <Input
                         id={`dob-${student.id}`}
                         type="date"
-                        value={studentData[student.id]?.dateOfBirth || student.dateOfBirth}
-                        onChange={(e) => updateStudentField(student.id, 'dateOfBirth', e.target.value)}
+                        value={studentData[student.id]?.date_of_birth || student.date_of_birth}
+                        onChange={(e) => updateStudentField(student.id, 'date_of_birth', e.target.value)}
                         className="bg-white/70"
                       />
                     ) : (
                       <div className="flex items-center space-x-2 p-2 bg-white/50 rounded">
                         <Calendar className="h-4 w-4 text-blue-600" />
-                        <span>{student.dateOfBirth}</span>
+                        <span>{new Date(student.date_of_birth).toLocaleDateString()}</span>
                       </div>
                     )}
                   </div>
@@ -236,7 +254,7 @@ export default function Students() {
                   <div className="space-y-2">
                     <Label className="text-blue-800">Admission Number</Label>
                     <div className="flex items-center space-x-2 p-2 bg-white/50 rounded">
-                      <span className="font-mono">{student.admissionNumber}</span>
+                      <span className="font-mono">{student.admission_number}</span>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -254,7 +272,7 @@ export default function Students() {
                   <div className="space-y-2">
                     <Label className="text-blue-800">Academic Year</Label>
                     <div className="flex items-center space-x-2 p-2 bg-white/50 rounded">
-                      <span>{student.academicYear}</span>
+                      <span>{student.academic_year}</span>
                     </div>
                   </div>
                 </div>
@@ -265,44 +283,32 @@ export default function Students() {
               {/* Emergency Contact */}
               <div>
                 <h3 className="text-lg font-semibold text-blue-900 mb-4">Emergency Contact</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor={`guardian-${student.id}`} className="text-blue-800">Guardian Name</Label>
-                    {editingStudent === student.id ? (
-                      <Input
-                        id={`guardian-${student.id}`}
-                        value={studentData[student.id]?.guardian || student.guardian}
-                        onChange={(e) => updateStudentField(student.id, 'guardian', e.target.value)}
-                        className="bg-white/70"
-                      />
-                    ) : (
-                      <div className="flex items-center space-x-2 p-2 bg-white/50 rounded">
-                        <User className="h-4 w-4 text-blue-600" />
-                        <span>{student.guardian}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`emergency-${student.id}`} className="text-blue-800">Emergency Contact</Label>
-                    {editingStudent === student.id ? (
-                      <Input
-                        id={`emergency-${student.id}`}
-                        value={studentData[student.id]?.emergencyContact || student.emergencyContact}
-                        onChange={(e) => updateStudentField(student.id, 'emergencyContact', e.target.value)}
-                        className="bg-white/70"
-                      />
-                    ) : (
-                      <div className="flex items-center space-x-2 p-2 bg-white/50 rounded">
-                        <Phone className="h-4 w-4 text-blue-600" />
-                        <span>{student.emergencyContact}</span>
-                      </div>
-                    )}
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`emergency-${student.id}`} className="text-blue-800">Emergency Contact</Label>
+                  {editingStudent === student.id ? (
+                    <Input
+                      id={`emergency-${student.id}`}
+                      value={studentData[student.id]?.emergency_contact || student.emergency_contact}
+                      onChange={(e) => updateStudentField(student.id, 'emergency_contact', e.target.value)}
+                      className="bg-white/70"
+                    />
+                  ) : (
+                    <div className="flex items-center space-x-2 p-2 bg-white/50 rounded">
+                      <Phone className="h-4 w-4 text-blue-600" />
+                      <span>{student.emergency_contact}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
-        ))}
+        ))
+      ) : (
+        <div className="text-center py-8 text-muted-foreground">
+          <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p>No students found</p>
+        </div>
+      )}
       </div>
     </div>
   );
