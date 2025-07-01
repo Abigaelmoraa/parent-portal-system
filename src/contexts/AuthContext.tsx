@@ -32,7 +32,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (token && savedUser) {
       setUser(JSON.parse(savedUser));
       // Verify token is still valid
-      api.getProfile().catch(() => {
+      api.getProfile().then((response) => {
+        setUser(response.data.user);
+        localStorage.setItem('parenthub_user', JSON.stringify(response.data.user));
+      }).catch(() => {
         // Token is invalid, clear storage
         localStorage.removeItem('parenthub_token');
         localStorage.removeItem('parenthub_user');
@@ -47,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       const response = await api.login(email, password);
-      const { user, token } = response;
+      const { user, token } = response.data;
       
       setUser(user);
       localStorage.setItem('parenthub_token', token);
@@ -56,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     } catch (error) {
       setIsLoading(false);
-      throw error;
+      return false;
     }
   };
 
@@ -65,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       const response = await api.signup(name, email, password);
-      const { user, token } = response;
+      const { user, token } = response.data;
       
       setUser(user);
       localStorage.setItem('parenthub_token', token);
