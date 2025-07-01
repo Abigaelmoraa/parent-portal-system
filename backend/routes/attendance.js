@@ -5,6 +5,129 @@ const { validateAttendance, validatePagination, validateDateRange } = require('.
 
 const router = express.Router();
 
+// GET /api/attendance
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const parentId = req.user.id;
+    const { startDate, endDate, subjectId, status } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    // Get all children for the parent
+    const [children] = await pool.execute(
+      `SELECT s.id, s.name, s.grade, s.class
+       FROM students s
+       JOIN parent_student ps ON s.id = ps.student_id
+       WHERE ps.parent_id = ? AND s.is_active = TRUE`,
+      [parentId]
+    );
+
+    if (children.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          attendance: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrev: false
+          }
+        }
+      });
+    }
+
+    const childIds = children.map(child => child.id);
+
+    // Build query conditions
+    let whereConditions = [`a.student_id IN (${childIds.map(() => '?').join(',')})`];
+    let queryParams = [...childIds];
+
+    if (startDate && endDate) {
+      whereConditions.push('a.date BETWEEN ? AND ?');
+      queryParams.push(startDate, endDate);
+    }
+    if (subjectId) {
+      whereConditions.push('a.subject_id = ?');
+      queryParams.push(subjectId);
+    }
+    if (status) {
+      whereConditions.push('a.status = ?');
+      queryParams.push(status);
+    }
+
+    // Get total count
+    const [countResult] = await pool.execute(
+      `SELECT COUNT(*) as total
+       FROM attendance a
+       WHERE ${whereConditions.join(' AND ')}`,
+      queryParams
+    );
+
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    // Get attendance records with pagination
+    const [attendance] = await pool.execute(
+      `SELECT 
+        a.id,
+        a.student_id,
+        s.name as student_name,
+        a.subject_id,
+        sub.name as subject_name,
+        a.date,
+        a.status,
+        a.time_in,
+        a.time_out,
+        a.remarks
+       FROM attendance a
+       JOIN students s ON a.student_id = s.id
+       JOIN subjects sub ON a.subject_id = sub.id
+       WHERE ${whereConditions.join(' AND ')}
+       ORDER BY a.date DESC, a.time_in DESC
+       LIMIT ? OFFSET ?`,
+      [...queryParams, limit, offset]
+    );
+
+    const formattedAttendance = attendance.map(record => ({
+      id: record.id,
+      student_id: record.student_id,
+      student_name: record.student_name,
+      subject_id: record.subject_id,
+      subject_name: record.subject_name,
+      date: record.date,
+      status: record.status,
+      time_in: record.time_in,
+      time_out: record.time_out,
+      remarks: record.remarks
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        attendance: formattedAttendance,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get attendance error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 // GET /api/attendance/overview
 router.get('/overview', authenticateToken, async (req, res) => {
   try {

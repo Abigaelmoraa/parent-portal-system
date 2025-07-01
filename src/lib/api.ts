@@ -20,14 +20,35 @@ export interface Student {
   email?: string;
   phone?: string;
   address?: string;
-  gender: 'Male' | 'Female' | 'Other';
+  gender: string;
   course: string;
   grade: string;
   class: string;
   academic_year: string;
   semester: string;
   emergency_contact?: string;
+  is_active: boolean | number;
   created_at: string;
+  updated_at?: string;
+  academicStats?: {
+    totalSubjects: number;
+    averageScore: number;
+    totalAssessments: number;
+  };
+  attendanceStats?: {
+    totalDays: number;
+    presentDays: number;
+    absentDays: number;
+    lateDays: number;
+    attendanceRate: number;
+  };
+  feeStats?: {
+    totalFees: string | number;
+    paidFees: string | number;
+    outstandingFees: string | number;
+  };
+  relationship_type?: string;
+  is_primary_guardian?: boolean | number;
 }
 
 export interface AcademicResult {
@@ -156,12 +177,14 @@ class ApiService {
 
   // Dashboard endpoints
   async getDashboardData(): Promise<DashboardData> {
-    return this.request('/dashboard');
+    const response = await this.request('/dashboard');
+    return response.data;
   }
 
   // Students endpoints
   async getStudents(): Promise<Student[]> {
-    return this.request('/students');
+    const response = await this.request('/students');
+    return response.data?.students || [];
   }
 
   async getStudent(id: number): Promise<Student> {
@@ -170,29 +193,34 @@ class ApiService {
 
   // Results endpoints
   async getResults(studentId?: number): Promise<AcademicResult[]> {
-    const endpoint = studentId ? `/results/${studentId}` : '/results';
-    return this.request(endpoint);
+    const endpoint = studentId ? `/results/student/${studentId}` : '/results';
+    const response = await this.request(endpoint);
+    return response.data.results || response.data;
   }
 
   // Attendance endpoints
   async getAttendance(studentId?: number): Promise<Attendance[]> {
-    const endpoint = studentId ? `/attendance/${studentId}` : '/attendance';
-    return this.request(endpoint);
+    const endpoint = studentId ? `/attendance/student/${studentId}` : '/attendance';
+    const response = await this.request(endpoint);
+    return response.data.attendance || response.data;
   }
 
   // Financials endpoints
   async getFinancials(studentId?: number) {
-    const endpoint = studentId ? `/financials/${studentId}` : '/financials';
-    return this.request(endpoint);
+    const endpoint = studentId ? `/financials/student/${studentId}` : '/financials';
+    const response = await this.request(endpoint);
+    return response.data.payments || response.data;
   }
 
   async getFeeStructure(): Promise<FeeStructure[]> {
-    return this.request('/financials/fee-structure');
+    const response = await this.request('/financials/fee-structure');
+    return response.data.feeStructure || response.data;
   }
 
   async getFeePayments(studentId?: number): Promise<FeePayment[]> {
-    const endpoint = studentId ? `/financials/payments/${studentId}` : '/financials/payments';
-    return this.request(endpoint);
+    const endpoint = studentId ? `/financials/payments?studentId=${studentId}` : '/financials/payments';
+    const response = await this.request(endpoint);
+    return response.data.payments || response.data;
   }
 }
 

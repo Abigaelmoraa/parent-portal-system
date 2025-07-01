@@ -5,6 +5,133 @@ const { validateFeePayment, validatePagination, validateDateRange } = require('.
 
 const router = express.Router();
 
+// GET /api/financials
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const parentId = req.user.id;
+    const { startDate, endDate, status, paymentMethod } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    // Get all children for the parent
+    const [children] = await pool.execute(
+      `SELECT s.id, s.name, s.grade, s.class
+       FROM students s
+       JOIN parent_student ps ON s.id = ps.student_id
+       WHERE ps.parent_id = ? AND s.is_active = TRUE`,
+      [parentId]
+    );
+
+    if (children.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          payments: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrev: false
+          }
+        }
+      });
+    }
+
+    const childIds = children.map(child => child.id);
+
+    // Build query conditions
+    let whereConditions = [`fp.student_id IN (${childIds.map(() => '?').join(',')})`];
+    let queryParams = [...childIds];
+
+    if (startDate && endDate) {
+      whereConditions.push('fp.payment_date BETWEEN ? AND ?');
+      queryParams.push(startDate, endDate);
+    }
+    if (status) {
+      whereConditions.push('fp.status = ?');
+      queryParams.push(status);
+    }
+    if (paymentMethod) {
+      whereConditions.push('fp.payment_method = ?');
+      queryParams.push(paymentMethod);
+    }
+
+    // Get total count
+    const [countResult] = await pool.execute(
+      `SELECT COUNT(*) as total
+       FROM fee_payments fp
+       WHERE ${whereConditions.join(' AND ')}`,
+      queryParams
+    );
+
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    // Get payment records with pagination
+    const [payments] = await pool.execute(
+      `SELECT 
+        fp.id,
+        fp.student_id,
+        s.name as student_name,
+        fp.fee_structure_id,
+        fs.fee_type,
+        fp.transaction_id,
+        fp.amount_paid,
+        fp.payment_date,
+        fp.payment_method,
+        fp.status,
+        fp.receipt_number,
+        fp.remarks
+       FROM fee_payments fp
+       JOIN students s ON fp.student_id = s.id
+       JOIN fee_structure fs ON fp.fee_structure_id = fs.id
+       WHERE ${whereConditions.join(' AND ')}
+       ORDER BY fp.payment_date DESC, fp.id DESC
+       LIMIT ? OFFSET ?`,
+      [...queryParams, limit, offset]
+    );
+
+    const formattedPayments = payments.map(payment => ({
+      id: payment.id,
+      student_id: payment.student_id,
+      student_name: payment.student_name,
+      fee_structure_id: payment.fee_structure_id,
+      fee_type: payment.fee_type,
+      transaction_id: payment.transaction_id,
+      amount_paid: payment.amount_paid,
+      payment_date: payment.payment_date,
+      payment_method: payment.payment_method,
+      status: payment.status,
+      receipt_number: payment.receipt_number,
+      remarks: payment.remarks
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        payments: formattedPayments,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get financials error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 // GET /api/financials/overview
 router.get('/overview', authenticateToken, async (req, res) => {
   try {
@@ -454,6 +581,145 @@ router.put('/payment/:paymentId', authenticateToken, validateFeePayment, async (
     });
   } catch (error) {
     console.error('Update payment error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// GET /api/financials/payments
+router.get('/payments', authenticateToken, validatePagination, validateDateRange, async (req, res) => {
+  try {
+    const parentId = req.user.id;
+    const { startDate, endDate, status, paymentMethod, studentId } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    // Get all children for the parent
+    const [children] = await pool.execute(
+      `SELECT s.id, s.name, s.grade, s.class
+       FROM students s
+       JOIN parent_student ps ON s.id = ps.student_id
+       WHERE ps.parent_id = ? AND s.is_active = TRUE`,
+      [parentId]
+    );
+
+    if (children.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          payments: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrev: false
+          }
+        }
+      });
+    }
+
+    const childIds = children.map(child => child.id);
+
+    // Build query conditions
+    let whereConditions = [`fp.student_id IN (${childIds.map(() => '?').join(',')})`];
+    let queryParams = [...childIds];
+
+    if (studentId) {
+      // Verify the student belongs to this parent
+      if (childIds.includes(parseInt(studentId))) {
+        whereConditions = ['fp.student_id = ?'];
+        queryParams = [studentId];
+      } else {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied to this student'
+        });
+      }
+    }
+    if (startDate && endDate) {
+      whereConditions.push('fp.payment_date BETWEEN ? AND ?');
+      queryParams.push(startDate, endDate);
+    }
+    if (status) {
+      whereConditions.push('fp.status = ?');
+      queryParams.push(status);
+    }
+    if (paymentMethod) {
+      whereConditions.push('fp.payment_method = ?');
+      queryParams.push(paymentMethod);
+    }
+
+    // Get total count
+    const [countResult] = await pool.execute(
+      `SELECT COUNT(*) as total
+       FROM fee_payments fp
+       WHERE ${whereConditions.join(' AND ')}`,
+      queryParams
+    );
+
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    // Get payment records with pagination
+    const [payments] = await pool.execute(
+      `SELECT 
+        fp.id,
+        fp.student_id,
+        s.name as student_name,
+        fp.fee_structure_id,
+        fs.fee_type,
+        fp.transaction_id,
+        fp.amount_paid,
+        fp.payment_date,
+        fp.payment_method,
+        fp.status,
+        fp.receipt_number,
+        fp.remarks
+       FROM fee_payments fp
+       JOIN students s ON fp.student_id = s.id
+       JOIN fee_structure fs ON fp.fee_structure_id = fs.id
+       WHERE ${whereConditions.join(' AND ')}
+       ORDER BY fp.payment_date DESC, fp.id DESC
+       LIMIT ? OFFSET ?`,
+      [...queryParams, limit, offset]
+    );
+
+    const formattedPayments = payments.map(payment => ({
+      id: payment.id,
+      student_id: payment.student_id,
+      student_name: payment.student_name,
+      fee_structure_id: payment.fee_structure_id,
+      fee_type: payment.fee_type,
+      transaction_id: payment.transaction_id,
+      amount_paid: payment.amount_paid,
+      payment_date: payment.payment_date,
+      payment_method: payment.payment_method,
+      status: payment.status,
+      receipt_number: payment.receipt_number,
+      remarks: payment.remarks
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        payments: formattedPayments,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get payments error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'

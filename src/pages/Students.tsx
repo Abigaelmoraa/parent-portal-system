@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,8 @@ export default function Students() {
     const fetchStudents = async () => {
       try {
         const data = await api.getStudents();
-        setStudents(data);
+        console.log("Fetched students:", data);
+        setStudents(data.students || []);
       } catch (error) {
         toast.error("Failed to load students");
         console.error("Students error:", error);

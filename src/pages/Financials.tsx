@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +20,8 @@ export default function Financials() {
           api.getFeeStructure(),
           api.getFeePayments()
         ]);
+        console.log('Fee Structure Data:', structureData);
+        console.log('Fee Payments Data:', paymentsData);
         setFeeStructure(structureData);
         setFeePayments(paymentsData);
       } catch (error) {
@@ -35,14 +36,14 @@ export default function Financials() {
   }, []);
 
   // Calculate financial summary
-  const totalFees = feeStructure.reduce((sum, fee) => sum + fee.amount, 0);
-  const totalPaid = feePayments.filter(p => p.status === 'Paid').reduce((sum, p) => sum + p.amount_paid, 0);
-  const outstandingFees = totalFees - totalPaid;
+  const totalFees = Array.isArray(feeStructure) ? feeStructure.reduce((sum, fee) => sum + (Number(fee.amount) || 0), 0) : 0;
+  const totalPaid = Array.isArray(feePayments) ? feePayments.filter(p => p.status === 'Paid').reduce((sum, p) => sum + (Number(p.amount_paid) || 0), 0) : 0;
+  const outstandingFees = Math.max(0, totalFees - totalPaid);
 
   const financialSummary = [
     { 
       title: "Total Fees Paid", 
-      value: `KSh ${totalPaid.toLocaleString()}`, 
+      value: `KSh ${Number(totalPaid).toLocaleString()}`,
       description: "This academic year", 
       icon: DollarSign, 
       color: "text-emerald-600", 
@@ -51,7 +52,7 @@ export default function Financials() {
     },
     { 
       title: "Outstanding Fees", 
-      value: `KSh ${outstandingFees.toLocaleString()}`, 
+      value: `KSh ${Number(outstandingFees).toLocaleString()}`,
       description: "Total outstanding", 
       icon: AlertTriangle, 
       color: "text-orange-600", 
@@ -60,7 +61,7 @@ export default function Financials() {
     },
     { 
       title: "Total Fee Structure", 
-      value: `KSh ${totalFees.toLocaleString()}`, 
+      value: `KSh ${Number(totalFees).toLocaleString()}`,
       description: "Full academic year", 
       icon: Calendar, 
       color: "text-blue-600", 
@@ -78,24 +79,24 @@ export default function Financials() {
     },
   ];
 
-  const feeTransactions = feePayments.map(payment => ({
+  const feeTransactions = Array.isArray(feePayments) ? feePayments.map(payment => ({
     id: payment.transaction_id,
     date: payment.payment_date,
     description: payment.fee_type,
     amount: payment.amount_paid,
     status: payment.status,
     type: payment.payment_method
-  }));
+  })) : [];
 
   // Generate semester data from fee structure
-  const semesterData = feeStructure.reduce((acc, fee) => {
+  const semesterData = Array.isArray(feeStructure) ? feeStructure.reduce((acc, fee) => {
     const semester = `${fee.semester} ${fee.academic_year}`;
     if (!acc[semester]) {
       acc[semester] = 0;
     }
     acc[semester] += fee.amount;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, number>) : {};
 
   const semesterDataArray = Object.entries(semesterData).map(([semester, amount]) => ({
     semester,
@@ -103,13 +104,13 @@ export default function Financials() {
   }));
 
   // Generate fee breakdown from fee structure
-  const feeBreakdown = feeStructure.reduce((acc, fee) => {
+  const feeBreakdown = Array.isArray(feeStructure) ? feeStructure.reduce((acc, fee) => {
     if (!acc[fee.fee_type]) {
       acc[fee.fee_type] = 0;
     }
     acc[fee.fee_type] += fee.amount;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, number>) : {};
 
   const feeBreakdownArray = Object.entries(feeBreakdown).map(([name, value], index) => ({
     name,

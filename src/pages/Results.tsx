@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -94,6 +93,35 @@ export default function Results() {
     return 'F';
   };
 
+  // Calculate overall GPA
+  const totalCredits = results.length * 3; // Assume 3 credits per subject if not provided
+  const gradePoints: Record<string, number> = {
+    'A+': 4.0, 'A': 4.0, 'A-': 3.7,
+    'B+': 3.3, 'B': 3.0, 'B-': 2.7,
+    'C+': 2.3, 'C': 2.0, 'C-': 1.7,
+    'D+': 1.3, 'D': 1.0, 'F': 0.0
+  };
+  const totalPoints = results.reduce((sum, r) => sum + ((gradePoints[r.grade || getGradeLetter((r.score / r.max_score) * 100)] || 0) * 3), 0);
+  const overallGPA = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : '0.00';
+
+  // Calculate total tests
+  const totalTests = results.length;
+
+  // Class rank is not available from API, so show N/A
+  const classRank = 'N/A';
+
+  // Get unique subjects for the performance chart
+  const uniqueSubjects = Object.keys(subjectResults);
+  const chartLines = uniqueSubjects.slice(0, 4).map((subject, idx) => (
+    <Line
+      key={subject}
+      type="monotone"
+      dataKey={subject}
+      stroke={["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"][idx % 6]}
+      strokeWidth={2}
+    />
+  ));
+
   if (isLoading) {
     return (
       <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -132,9 +160,9 @@ export default function Results() {
                 <Award className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">3.7</div>
+                <div className="text-2xl font-bold">{overallGPA}</div>
                 <p className="text-xs text-muted-foreground">
-                  +0.2 from last semester
+                  {/* GPA change from last semester not available */}
                 </p>
               </CardContent>
             </Card>
@@ -144,9 +172,9 @@ export default function Results() {
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">8th</div>
+                <div className="text-2xl font-bold">{classRank}</div>
                 <p className="text-xs text-muted-foreground">
-                  Out of 120 students
+                  {/* Out of X students not available */}
                 </p>
               </CardContent>
             </Card>
@@ -156,7 +184,7 @@ export default function Results() {
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">33</div>
+                <div className="text-2xl font-bold">{totalTests}</div>
                 <p className="text-xs text-muted-foreground">
                   This semester
                 </p>
@@ -177,10 +205,7 @@ export default function Results() {
                   <XAxis dataKey="month" />
                   <YAxis />
                   <Tooltip />
-                  <Line type="monotone" dataKey="Mathematics" stroke="#3b82f6" strokeWidth={2} />
-                  <Line type="monotone" dataKey="Science" stroke="#10b981" strokeWidth={2} />
-                  <Line type="monotone" dataKey="English" stroke="#f59e0b" strokeWidth={2} />
-                  <Line type="monotone" dataKey="History" stroke="#ef4444" strokeWidth={2} />
+                  {chartLines}
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>

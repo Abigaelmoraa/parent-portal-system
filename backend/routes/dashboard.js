@@ -42,6 +42,170 @@ const calculateAttendanceRate = (attendance) => {
   return total > 0 ? Math.round((present / total) * 100) : 0;
 };
 
+// GET /api/dashboard
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const parentId = req.user.id;
+
+    // Get all children for the parent
+    const [children] = await pool.execute(
+      `SELECT s.id, s.name, s.grade, s.class, s.course, s.semester, s.academic_year
+       FROM students s
+       JOIN parent_student ps ON s.id = ps.student_id
+       WHERE ps.parent_id = ? AND s.is_active = TRUE`,
+      [parentId]
+    );
+
+    if (children.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          total_students: 0,
+          total_results: 0,
+          total_attendance: 0,
+          total_payments: 0,
+          recent_results: [],
+          recent_attendance: [],
+          recent_payments: [],
+          fee_summary: {
+            total_fees: 0,
+            paid_fees: 0,
+            outstanding_fees: 0
+          }
+        }
+      });
+    }
+
+    const childIds = children.map(child => child.id);
+    const currentSemester = children[0]?.semester || 'Semester 2';
+    const currentYear = children[0]?.academic_year || '2024/2025';
+
+    // Get total counts
+    const [resultsCount] = await pool.execute(
+      `SELECT COUNT(*) as total FROM academic_results WHERE student_id IN (${childIds.map(() => '?').join(',')})`,
+      childIds
+    );
+
+    const [attendanceCount] = await pool.execute(
+      `SELECT COUNT(*) as total FROM attendance WHERE student_id IN (${childIds.map(() => '?').join(',')})`,
+      childIds
+    );
+
+    const [paymentsCount] = await pool.execute(
+      `SELECT COUNT(*) as total FROM fee_payments WHERE student_id IN (${childIds.map(() => '?').join(',')})`,
+      childIds
+    );
+
+    // Get recent results
+    const [recentResults] = await pool.execute(
+      `SELECT ar.id, ar.student_id, s.name as student_name, ar.subject_id, sub.name as subject_name,
+              ar.assessment_type, ar.score, ar.max_score, ar.grade, ar.assessment_date
+       FROM academic_results ar
+       JOIN students s ON ar.student_id = s.id
+       JOIN subjects sub ON ar.subject_id = sub.id
+       WHERE ar.student_id IN (${childIds.map(() => '?').join(',')})
+       ORDER BY ar.assessment_date DESC
+       LIMIT 5`,
+      childIds
+    );
+
+    // Get recent attendance
+    const [recentAttendance] = await pool.execute(
+      `SELECT a.id, a.student_id, s.name as student_name, a.subject_id, sub.name as subject_name,
+              a.date, a.status, a.time_in
+       FROM attendance a
+       JOIN students s ON a.student_id = s.id
+       JOIN subjects sub ON a.subject_id = sub.id
+       WHERE a.student_id IN (${childIds.map(() => '?').join(',')})
+       ORDER BY a.date DESC, a.time_in DESC
+       LIMIT 5`,
+      childIds
+    );
+
+    // Get recent payments
+    const [recentPayments] = await pool.execute(
+      `SELECT fp.id, fp.student_id, s.name as student_name, fp.fee_structure_id, fs.fee_type,
+              fp.amount_paid, fp.payment_date, fp.payment_method, fp.status
+       FROM fee_payments fp
+       JOIN students s ON fp.student_id = s.id
+       JOIN fee_structure fs ON fp.fee_structure_id = fs.id
+       WHERE fp.student_id IN (${childIds.map(() => '?').join(',')})
+       ORDER BY fp.payment_date DESC
+       LIMIT 5`,
+      childIds
+    );
+
+    // Get fee summary
+    const [feeSummary] = await pool.execute(
+      `SELECT 
+        COALESCE(SUM(fs.amount), 0) as total_fees,
+        COALESCE(SUM(COALESCE(fp.amount_paid, 0)), 0) as paid_fees
+       FROM fee_structure fs
+       LEFT JOIN fee_payments fp ON fs.id = fp.fee_structure_id AND fp.status = 'Paid'
+       WHERE fs.semester = ? AND fs.academic_year = ?`,
+      [currentSemester, currentYear]
+    );
+
+    const totalFees = feeSummary[0]?.total_fees || 0;
+    const paidFees = feeSummary[0]?.paid_fees || 0;
+    const outstandingFees = totalFees - paidFees;
+
+    res.json({
+      success: true,
+      data: {
+        total_students: children.length,
+        total_results: resultsCount[0]?.total || 0,
+        total_attendance: attendanceCount[0]?.total || 0,
+        total_payments: paymentsCount[0]?.total || 0,
+        recent_results: recentResults.map(result => ({
+          id: result.id,
+          student_id: result.student_id,
+          student_name: result.student_name,
+          subject_id: result.subject_id,
+          subject_name: result.subject_name,
+          assessment_type: result.assessment_type,
+          score: result.score,
+          max_score: result.max_score,
+          grade: result.grade,
+          assessment_date: result.assessment_date
+        })),
+        recent_attendance: recentAttendance.map(att => ({
+          id: att.id,
+          student_id: att.student_id,
+          student_name: att.student_name,
+          subject_id: att.subject_id,
+          subject_name: att.subject_name,
+          date: att.date,
+          status: att.status,
+          time_in: att.time_in
+        })),
+        recent_payments: recentPayments.map(payment => ({
+          id: payment.id,
+          student_id: payment.student_id,
+          student_name: payment.student_name,
+          fee_structure_id: payment.fee_structure_id,
+          fee_type: payment.fee_type,
+          amount_paid: payment.amount_paid,
+          payment_date: payment.payment_date,
+          payment_method: payment.payment_method,
+          status: payment.status
+        })),
+        fee_summary: {
+          total_fees: totalFees,
+          paid_fees: paidFees,
+          outstanding_fees: outstandingFees
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Dashboard error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 // GET /api/dashboard/overview
 router.get('/overview', authenticateToken, async (req, res) => {
   try {

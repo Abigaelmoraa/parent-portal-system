@@ -46,6 +46,137 @@ const getGradeLetter = (score) => {
   return 'F';
 };
 
+// GET /api/results
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const parentId = req.user.id;
+    const { semester, academicYear, subjectId } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    // Get all children for the parent
+    const [children] = await pool.execute(
+      `SELECT s.id, s.name, s.grade, s.class, s.semester, s.academic_year
+       FROM students s
+       JOIN parent_student ps ON s.id = ps.student_id
+       WHERE ps.parent_id = ? AND s.is_active = TRUE`,
+      [parentId]
+    );
+
+    if (children.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          results: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrev: false
+          }
+        }
+      });
+    }
+
+    const childIds = children.map(child => child.id);
+    const currentSemester = semester || children[0]?.semester || 'Semester 2';
+    const currentYear = academicYear || children[0]?.academic_year || '2024/2025';
+
+    // Build query conditions
+    let whereConditions = [`ar.student_id IN (${childIds.map(() => '?').join(',')})`];
+    let queryParams = [...childIds];
+
+    if (semester) {
+      whereConditions.push('ar.semester = ?');
+      queryParams.push(semester);
+    }
+    if (academicYear) {
+      whereConditions.push('ar.academic_year = ?');
+      queryParams.push(academicYear);
+    }
+    if (subjectId) {
+      whereConditions.push('ar.subject_id = ?');
+      queryParams.push(subjectId);
+    }
+
+    // Get total count
+    const [countResult] = await pool.execute(
+      `SELECT COUNT(*) as total
+       FROM academic_results ar
+       WHERE ${whereConditions.join(' AND ')}`,
+      queryParams
+    );
+
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    // Get results with pagination
+    const [results] = await pool.execute(
+      `SELECT 
+        ar.id,
+        ar.student_id,
+        s.name as student_name,
+        ar.subject_id,
+        sub.name as subject_name,
+        ar.assessment_type,
+        ar.score,
+        ar.max_score,
+        ar.grade,
+        ar.semester,
+        ar.academic_year,
+        ar.assessment_date,
+        ar.remarks
+       FROM academic_results ar
+       JOIN students s ON ar.student_id = s.id
+       JOIN subjects sub ON ar.subject_id = sub.id
+       WHERE ${whereConditions.join(' AND ')}
+       ORDER BY ar.assessment_date DESC, ar.id DESC
+       LIMIT ? OFFSET ?`,
+      [...queryParams, limit, offset]
+    );
+
+    const formattedResults = results.map(result => ({
+      id: result.id,
+      student_id: result.student_id,
+      student_name: result.student_name,
+      subject_id: result.subject_id,
+      subject_name: result.subject_name,
+      assessment_type: result.assessment_type,
+      score: result.score,
+      max_score: result.max_score,
+      grade: result.grade,
+      semester: result.semester,
+      academic_year: result.academic_year,
+      assessment_date: result.assessment_date,
+      remarks: result.remarks
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        results: formattedResults,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get results error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 // GET /api/results/overview
 router.get('/overview', authenticateToken, async (req, res) => {
   try {
