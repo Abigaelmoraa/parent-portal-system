@@ -42,7 +42,7 @@ export default function Index() {
     {
       name: "Grace Wanjiku",
       role: "Parent of Business Student",
-      content: "UEAB Portal has made it so easy to track my daughter's progress at university. I love the real-time updates!"
+      content: "Parents Portal has made it so easy to track my daughter's progress at university. I love the real-time updates!"
     },
     {
       name: "David Kiprotich",
@@ -52,7 +52,7 @@ export default function Index() {
     {
       name: "Mary Achieng",
       role: "Parent of Nursing Student",
-      content: "Managing my child's university activities was complex until I found UEAB Portal. Now everything is organized!"
+      content: "Managing my child's university activities was complex until I found Parents Portal. Now everything is organized!"
     }
   ];
 
@@ -65,7 +65,7 @@ export default function Index() {
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <GraduationCap className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold">UEAB Portal</span>
+            <span className="text-xl font-bold">Parents Portal</span>
           </div>
           <div className="space-x-4">
             <Button variant="ghost" asChild>
@@ -86,7 +86,7 @@ export default function Index() {
             <span className="text-primary block mt-2">Student Progress Portal</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            UEAB Portal is the complete platform for parents and students to track academic results, monitor attendance, 
+            Parents Portal is the complete platform for parents and students to track academic results, monitor attendance, 
             manage university finances, and stay engaged with your educational journey.
           </p>
           <div className="space-x-4">
@@ -167,7 +167,7 @@ export default function Index() {
               Trusted by UEAB Families
             </h2>
             <p className="text-lg text-gray-600">
-              See what other parents are saying about UEAB Portal
+              See what other parents are saying about Parents Portal
             </p>
           </div>
           
@@ -223,7 +223,7 @@ export default function Index() {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <GraduationCap className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold">UEAB Portal</span>
+              <span className="text-xl font-bold">Parents Portal</span>
             </div>
             <div className="text-sm text-gray-400">
               © 2024 University of Eastern Africa, Baraton. All rights reserved.

@@ -68,7 +68,7 @@ export default function Login() {
             </div>
             <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
             <CardDescription>
-              Sign in to your UEAB Portal account to track your child's progress
+              Sign in to your Parents Portal account to track your child's progress
             </CardDescription>
           </CardHeader>
           <CardContent>
