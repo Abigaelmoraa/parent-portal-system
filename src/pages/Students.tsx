@@ -64,6 +64,8 @@ export default function Students() {
     toast.success(`Downloading report for ${studentName}`);
   };
 
+  console.log("Type of students:", typeof students, Array.isArray(students), students);
+
   if (isLoading) {
     return (
       <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -87,7 +89,7 @@ export default function Students() {
       </div>
 
       <div className="space-y-6">
-        {students.length > 0 ? (
+        {Array.isArray(students) && students.length > 0 ? (
           students.map((student) => (
             <Card key={student.id} className="bg-gradient-to-br from-blue-50 to-blue-100 border-0 shadow-lg">
             <CardHeader>
@@ -304,9 +306,9 @@ export default function Students() {
           </Card>
         ))
       ) : (
-        <div className="text-center py-8 text-muted-foreground">
-          <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>No students found</p>
+        <div className="flex flex-col items-center justify-center py-24">
+          <User className="h-16 w-16 text-gray-300 mb-4" />
+          <span className="text-lg text-gray-400">No students found</span>
         </div>
       )}
       </div>
