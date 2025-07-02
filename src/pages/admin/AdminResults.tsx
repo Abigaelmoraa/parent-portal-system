@@ -15,22 +15,26 @@ const AdminResults: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStudent, setSelectedStudent] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState('all');
   const [showDialog, setShowDialog] = useState(false);
   const [editResult, setEditResult] = useState<AcademicResult | null>(null);
   const [form, setForm] = useState<Partial<AcademicResult>>({});
 
   useEffect(() => {
-    fetchResults();
     fetchStudents();
   }, []);
+
+  useEffect(() => {
+    fetchResults();
+    // eslint-disable-next-line
+  }, [searchTerm, selectedStudent]);
 
   const fetchResults = async () => {
     setLoading(true);
     try {
       const res = await api.getAdminResults({ 
         search: searchTerm,
-        studentId: selectedStudent ? parseInt(selectedStudent) : undefined
+        studentId: selectedStudent !== 'all' ? parseInt(selectedStudent) : undefined
       });
       setResults(res.data.results || []);
     } catch (e) {
@@ -81,7 +85,11 @@ const AdminResults: React.FC = () => {
     e.preventDefault();
     try {
       if (editResult) {
-        await api.updateAdminResult(editResult.id, form);
+        // Clean the payload: remove undefined, null, or empty string fields
+        const cleanPayload = Object.fromEntries(
+          Object.entries(form).filter(([, v]) => v !== undefined && v !== null && v !== '')
+        );
+        await api.updateAdminResult(editResult.id, cleanPayload);
         toast.success('Result updated successfully');
       } else {
         await api.createAdminResult(form);
@@ -262,7 +270,7 @@ const AdminResults: React.FC = () => {
                 <SelectValue placeholder="Filter by student" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Students</SelectItem>
+                <SelectItem value="all">All Students</SelectItem>
                 {students.map((student) => (
                   <SelectItem key={student.id} value={student.id.toString()}>
                     {student.name}

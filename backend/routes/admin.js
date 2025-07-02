@@ -730,6 +730,231 @@ router.get('/results', authenticateToken, checkAdminAccess, async (req, res) => 
   }
 });
 
+// --- ADMIN ATTENDANCE MANAGEMENT ---
+
+// GET /api/admin/attendance - List all attendance records (with optional filters)
+router.get('/attendance', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const { search = '', studentId, date, status, startDate, endDate } = req.query;
+    let where = 'WHERE 1=1';
+    const params = [];
+
+    if (studentId) {
+      where += ' AND a.student_id = ?';
+      params.push(studentId);
+    }
+    if (search) {
+      where += ' AND s.name LIKE ?';
+      params.push(`%${search}%`);
+    }
+    if (date) {
+      where += ' AND DATE(a.date) = ?';
+      params.push(date);
+    }
+    if (status) {
+      where += ' AND a.status = ?';
+      params.push(status);
+    }
+    if (startDate) {
+      where += ' AND DATE(a.date) >= ?';
+      params.push(startDate);
+    }
+    if (endDate) {
+      where += ' AND DATE(a.date) <= ?';
+      params.push(endDate);
+    }
+
+    const [attendance] = await pool.execute(
+      `SELECT a.*, s.name as student_name, s.admission_number, s.grade, s.course
+       FROM attendance a
+       JOIN students s ON a.student_id = s.id
+       ${where}
+       ORDER BY a.date DESC, s.name
+       LIMIT 200`,
+      params
+    );
+
+    res.json({ success: true, data: { attendance } });
+  } catch (error) {
+    console.error('Admin get attendance error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// POST /api/admin/attendance - Create attendance record
+router.post('/attendance', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const {
+      student_id,
+      date,
+      status,
+      time_in,
+      time_out,
+      remarks
+    } = req.body;
+
+    if (!student_id || !date || !status) {
+      return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    // Check if attendance record already exists for this student and date
+    const [existing] = await pool.execute(
+      'SELECT id FROM attendance WHERE student_id = ? AND DATE(date) = DATE(?)',
+      [student_id, date]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({ success: false, message: 'Attendance record already exists for this date' });
+    }
+
+    const [result] = await pool.execute(
+      `INSERT INTO attendance (student_id, date, status, time_in, time_out, remarks)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [student_id, date, status, time_in || null, time_out || null, remarks || null]
+    );
+
+    res.status(201).json({ success: true, message: 'Attendance record created', data: { id: result.insertId } });
+  } catch (error) {
+    console.error('Admin create attendance error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// PUT /api/admin/attendance/:id - Update attendance record
+router.put('/attendance/:id', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const fields = ['student_id', 'date', 'status', 'time_in', 'time_out', 'remarks'];
+    const updates = [];
+    const values = [];
+
+    for (const field of fields) {
+      if (req.body[field] !== undefined) {
+        updates.push(`${field} = ?`);
+        values.push(req.body[field]);
+      }
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ success: false, message: 'No fields to update' });
+    }
+
+    values.push(id);
+    await pool.execute(
+      `UPDATE attendance SET ${updates.join(', ')} WHERE id = ?`,
+      values
+    );
+
+    res.json({ success: true, message: 'Attendance record updated' });
+  } catch (error) {
+    console.error('Admin update attendance error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// DELETE /api/admin/attendance/:id - Delete attendance record
+router.delete('/attendance/:id', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.execute('DELETE FROM attendance WHERE id = ?', [id]);
+    res.json({ success: true, message: 'Attendance record deleted' });
+  } catch (error) {
+    console.error('Admin delete attendance error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// POST /api/admin/attendance/bulk - Bulk create attendance records
+router.post('/attendance/bulk', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const { date, records } = req.body;
+
+    if (!date || !records || !Array.isArray(records)) {
+      return res.status(400).json({ success: false, message: 'Invalid request data' });
+    }
+
+    // Check if attendance records already exist for this date
+    const [existing] = await pool.execute(
+      'SELECT student_id FROM attendance WHERE DATE(date) = DATE(?)',
+      [date]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({ success: false, message: 'Attendance records already exist for this date' });
+    }
+
+    // Insert all records
+    const insertPromises = records.map(record => {
+      return pool.execute(
+        `INSERT INTO attendance (student_id, date, status, time_in, time_out, remarks)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [record.student_id, date, record.status, record.time_in || null, record.time_out || null, record.remarks || null]
+      );
+    });
+
+    await Promise.all(insertPromises);
+
+    res.status(201).json({ success: true, message: `${records.length} attendance records created` });
+  } catch (error) {
+    console.error('Admin bulk create attendance error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// GET /api/admin/attendance/statistics - Get attendance statistics
+router.get('/attendance/statistics', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const { startDate, endDate, grade, course } = req.query;
+    let where = 'WHERE 1=1';
+    const params = [];
+
+    if (startDate) {
+      where += ' AND DATE(a.date) >= ?';
+      params.push(startDate);
+    }
+    if (endDate) {
+      where += ' AND DATE(a.date) <= ?';
+      params.push(endDate);
+    }
+    if (grade) {
+      where += ' AND s.grade = ?';
+      params.push(grade);
+    }
+    if (course) {
+      where += ' AND s.course = ?';
+      params.push(course);
+    }
+
+    const [stats] = await pool.execute(
+      `SELECT 
+        COUNT(*) as total_records,
+        SUM(CASE WHEN a.status = 'Present' THEN 1 ELSE 0 END) as present_count,
+        SUM(CASE WHEN a.status = 'Absent' THEN 1 ELSE 0 END) as absent_count,
+        SUM(CASE WHEN a.status = 'Late' THEN 1 ELSE 0 END) as late_count,
+        COUNT(DISTINCT a.student_id) as students_tracked,
+        COUNT(DISTINCT DATE(a.date)) as total_days
+       FROM attendance a
+       JOIN students s ON a.student_id = s.id
+       ${where}`,
+      params
+    );
+
+    const totalRecords = stats[0]?.total_records || 0;
+    const attendanceRate = totalRecords > 0 ? Math.round((stats[0]?.present_count / totalRecords) * 100) : 0;
+
+    res.json({
+      success: true,
+      data: {
+        ...stats[0],
+        attendanceRate
+      }
+    });
+  } catch (error) {
+    console.error('Admin attendance statistics error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
 // POST /api/admin/results - Create a result
 router.post('/results', authenticateToken, checkAdminAccess, async (req, res) => {
   try {

@@ -138,7 +138,7 @@ export interface Notification {
 
 // --- ADMIN API ---
 
-export interface AdminStudentPayload extends Partial<Student> {}
+export type AdminStudentPayload = Partial<Student>;
 
 // Helper function to get auth token
 const getAuthToken = (): string | null => {
@@ -255,6 +255,15 @@ class ApiService {
     await this.request(`/dashboard/notifications/${id}/read`, { method: 'PUT' });
   }
 
+  // Helper to clean params
+  private cleanParams(params: Record<string, unknown>): Record<string, string> {
+    return Object.fromEntries(
+      Object.entries(params)
+        .filter(([, v]) => v !== undefined && v !== null && v !== '')
+        .map(([k, v]) => [k, String(v)])
+    );
+  }
+
   // Admin: Dashboard stats
   async getAdminDashboard() {
     return this.request('/admin/dashboard');
@@ -262,7 +271,8 @@ class ApiService {
 
   // Admin: Get all students
   async getAdminStudents(params: { page?: number; limit?: number; search?: string; grade?: string; course?: string } = {}) {
-    const query = new URLSearchParams(params as any).toString();
+    const cleanParams = this.cleanParams(params);
+    const query = new URLSearchParams(cleanParams).toString();
     return this.request(`/admin/students${query ? `?${query}` : ''}`);
   }
 
@@ -291,7 +301,8 @@ class ApiService {
 
   // Admin: Results endpoints
   async getAdminResults(params: { search?: string; studentId?: number } = {}) {
-    const query = new URLSearchParams(params as Record<string, string>).toString();
+    const cleanParams = this.cleanParams(params);
+    const query = new URLSearchParams(cleanParams).toString();
     return this.request(`/admin/results${query ? `?${query}` : ''}`);
   }
 
@@ -313,6 +324,46 @@ class ApiService {
     return this.request(`/admin/results/${id}`, {
       method: 'DELETE',
     });
+  }
+
+  // Admin: Attendance endpoints
+  async getAdminAttendance(params: { search?: string; studentId?: number; date?: string; status?: string; startDate?: string; endDate?: string } = {}) {
+    const cleanParams = this.cleanParams(params);
+    const query = new URLSearchParams(cleanParams).toString();
+    return this.request(`/admin/attendance${query ? `?${query}` : ''}`);
+  }
+
+  async createAdminAttendance(payload: Partial<Attendance>) {
+    return this.request('/admin/attendance', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async updateAdminAttendance(id: number, payload: Partial<Attendance>) {
+    return this.request(`/admin/attendance/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteAdminAttendance(id: number) {
+    return this.request(`/admin/attendance/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async createBulkAttendance(date: string, records: Array<{ student_id: number; status: string; time_in?: string; time_out?: string; remarks?: string }>) {
+    return this.request('/admin/attendance/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ date, records }),
+    });
+  }
+
+  async getAdminAttendanceStats(params: { startDate?: string; endDate?: string; grade?: string; course?: string } = {}) {
+    const cleanParams = this.cleanParams(params);
+    const query = new URLSearchParams(cleanParams).toString();
+    return this.request(`/admin/attendance/statistics${query ? `?${query}` : ''}`);
   }
 }
 
