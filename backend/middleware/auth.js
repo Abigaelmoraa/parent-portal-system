@@ -18,7 +18,7 @@ const authenticateToken = async (req, res, next) => {
     
     // Get user from database to ensure they still exist and are active
     const [users] = await pool.execute(
-      'SELECT id, name, email, phone, address, relationship, is_active FROM parents WHERE id = ? AND is_active = TRUE',
+      'SELECT id, name, email, phone, address, relationship, role, is_active FROM parents WHERE id = ? AND is_active = TRUE',
       [decoded.userId]
     );
 
@@ -86,7 +86,7 @@ const optionalAuth = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const [users] = await pool.execute(
-      'SELECT id, name, email, phone, address, relationship, is_active FROM parents WHERE id = ? AND is_active = TRUE',
+      'SELECT id, name, email, phone, address, relationship, role, is_active FROM parents WHERE id = ? AND is_active = TRUE',
       [decoded.userId]
     );
 

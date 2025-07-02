@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { api, Student } from '@/lib/api';
+import { toast } from 'sonner';
 
 interface AdminDashboardStats {
   totalStudents: number;
@@ -29,27 +30,24 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   const fetchStats = async () => {
-    setLoading(true);
     try {
-      // Replace with actual admin dashboard API call
       const res = await api.getAdminDashboard();
       setStats(res.data);
     } catch (e) {
-      // handle error
+      console.error('Error fetching admin dashboard stats:', e);
     }
-    setLoading(false);
   };
 
   const fetchStudents = async () => {
     setLoading(true);
     try {
-      // Replace with actual admin students API call
       const res = await api.getAdminStudents();
       setStudents(res.data.students);
     } catch (e) {
-      // handle error
+      console.error('Error fetching students:', e);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleEdit = (student: Student) => {
@@ -62,9 +60,11 @@ const AdminDashboard: React.FC = () => {
     if (!window.confirm('Are you sure you want to delete this student?')) return;
     try {
       await api.deleteAdminStudent(studentId);
+      toast.success('Student deleted successfully');
       fetchStudents();
     } catch (e) {
-      // handle error
+      console.error('Error deleting student:', e);
+      toast.error('Failed to delete student');
     }
   };
 
@@ -77,15 +77,18 @@ const AdminDashboard: React.FC = () => {
     try {
       if (editStudent) {
         await api.updateAdminStudent(editStudent.id, form);
+        toast.success('Student updated successfully');
       } else {
         await api.createAdminStudent(form);
+        toast.success('Student created successfully');
       }
       setShowDialog(false);
       setEditStudent(null);
       setForm({});
       fetchStudents();
     } catch (e) {
-      // handle error
+      console.error('Error saving student:', e);
+      toast.error('Failed to save student');
     }
   };
 
