@@ -786,6 +786,7 @@ router.post('/attendance', authenticateToken, checkAdminAccess, async (req, res)
   try {
     const {
       student_id,
+      subject_id,
       date,
       status,
       time_in,
@@ -793,7 +794,7 @@ router.post('/attendance', authenticateToken, checkAdminAccess, async (req, res)
       remarks
     } = req.body;
 
-    if (!student_id || !date || !status) {
+    if (!student_id || !subject_id || !date || !status) {
       return res.status(400).json({ success: false, message: 'Missing required fields' });
     }
 
@@ -808,9 +809,9 @@ router.post('/attendance', authenticateToken, checkAdminAccess, async (req, res)
     }
 
     const [result] = await pool.execute(
-      `INSERT INTO attendance (student_id, date, status, time_in, time_out, remarks)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [student_id, date, status, time_in || null, time_out || null, remarks || null]
+      `INSERT INTO attendance (student_id, subject_id, date, status, time_in, time_out, remarks)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [student_id, subject_id, date, status, time_in || null, time_out || null, remarks || null]
     );
 
     res.status(201).json({ success: true, message: 'Attendance record created', data: { id: result.insertId } });
@@ -991,7 +992,7 @@ router.put('/results/:id', authenticateToken, checkAdminAccess, async (req, res)
   try {
     const { id } = req.params;
     const fields = [
-      'student_id', 'subject_id', 'subject_name', 'assessment_type', 'score', 'max_score', 'grade', 'semester', 'academic_year', 'assessment_date', 'remarks'
+      'student_id', 'subject_id', 'assessment_type', 'score', 'max_score', 'grade', 'semester', 'academic_year', 'assessment_date', 'remarks'
     ];
     const updates = [];
     const values = [];
@@ -1024,6 +1025,17 @@ router.delete('/results/:id', authenticateToken, checkAdminAccess, async (req, r
     res.json({ success: true, message: 'Result deleted' });
   } catch (error) {
     console.error('Admin delete result error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// GET /api/admin/subjects - List all subjects
+router.get('/subjects', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const [subjects] = await pool.execute('SELECT id, name FROM subjects ORDER BY name');
+    res.json({ success: true, data: { subjects } });
+  } catch (error) {
+    console.error('Admin get subjects error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });

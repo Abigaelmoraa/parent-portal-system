@@ -36,6 +36,7 @@ interface AttendanceStats {
 export default function AdminAttendance() {
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [subjects, setSubjects] = useState<{ id: number; name: string }[]>([]);
   const [stats, setStats] = useState<AttendanceStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -50,7 +51,7 @@ export default function AdminAttendance() {
   // Filters
   const [filters, setFilters] = useState({
     search: '',
-    studentId: '',
+    studentId: 'all',
     date: '',
     status: '',
     startDate: '',
@@ -60,6 +61,7 @@ export default function AdminAttendance() {
   // Form data
   const [formData, setFormData] = useState({
     student_id: '',
+    subject_id: '',
     date: format(new Date(), 'yyyy-MM-dd'),
     status: 'Present',
     time_in: '',
@@ -73,6 +75,7 @@ export default function AdminAttendance() {
   useEffect(() => {
     loadAttendance();
     loadStudents();
+    loadSubjects();
     loadStats();
   }, [filters]);
 
@@ -81,7 +84,7 @@ export default function AdminAttendance() {
       setLoading(true);
       const params: Record<string, string> = {};
       if (filters.search) params.search = filters.search;
-      if (filters.studentId) params.studentId = filters.studentId;
+      if (filters.studentId && filters.studentId !== 'all') params.studentId = filters.studentId;
       if (filters.date) params.date = filters.date;
       if (filters.status) params.status = filters.status;
       if (filters.startDate) params.startDate = filters.startDate;
@@ -102,10 +105,19 @@ export default function AdminAttendance() {
 
   const loadStudents = async () => {
     try {
-      const response = await api.getAdminStudents({ limit: 1000 });
+      const response = await api.getAdminStudents({ page: 1, limit: 100 });
       setStudents(response.data.students || []);
     } catch (error) {
       console.error('Failed to load students:', error);
+    }
+  };
+
+  const loadSubjects = async () => {
+    try {
+      const response = await api.getAdminSubjects();
+      setSubjects(response.data.subjects || []);
+    } catch (error) {
+      console.error('Failed to load subjects:', error);
     }
   };
 
@@ -127,7 +139,7 @@ export default function AdminAttendance() {
 
   const handleCreate = async () => {
     try {
-      if (!formData.student_id || !formData.date || !formData.status) {
+      if (!formData.student_id || !formData.subject_id || !formData.date || !formData.status) {
         toast({
           title: 'Error',
           description: 'Please fill in all required fields',
@@ -138,6 +150,7 @@ export default function AdminAttendance() {
 
       await api.createAdminAttendance({
         student_id: parseInt(formData.student_id),
+        subject_id: parseInt(formData.subject_id),
         date: formData.date,
         status: formData.status as 'Present' | 'Absent' | 'Late' | 'Excused',
         time_in: formData.time_in || undefined,
@@ -169,6 +182,7 @@ export default function AdminAttendance() {
 
       await api.updateAdminAttendance(selectedRecord.id, {
         student_id: parseInt(formData.student_id),
+        subject_id: parseInt(formData.subject_id),
         date: formData.date,
         status: formData.status as 'Present' | 'Absent' | 'Late' | 'Excused',
         time_in: formData.time_in || undefined,
@@ -247,6 +261,7 @@ export default function AdminAttendance() {
   const resetForm = () => {
     setFormData({
       student_id: '',
+      subject_id: '',
       date: format(new Date(), 'yyyy-MM-dd'),
       status: 'Present',
       time_in: '',
@@ -259,6 +274,7 @@ export default function AdminAttendance() {
     setSelectedRecord(record);
     setFormData({
       student_id: record.student_id.toString(),
+      subject_id: record.subject_id ? record.subject_id.toString() : '',
       date: format(new Date(record.date), 'yyyy-MM-dd'),
       status: record.status,
       time_in: record.time_in || '',
@@ -437,6 +453,21 @@ export default function AdminAttendance() {
                   </Select>
                 </div>
                 <div>
+                  <Label>Subject</Label>
+                  <Select value={formData.subject_id} onValueChange={(value) => setFormData({ ...formData, subject_id: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjects.map(subject => (
+                        <SelectItem key={subject.id} value={subject.id.toString()}>
+                          {subject.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label>Date</Label>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -575,7 +606,7 @@ export default function AdminAttendance() {
                   <SelectValue placeholder="All students" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All students</SelectItem>
+                  <SelectItem value="all">All Students</SelectItem>
                   {students.map((student) => (
                     <SelectItem key={student.id} value={student.id.toString()}>
                       {student.name}
@@ -591,7 +622,7 @@ export default function AdminAttendance() {
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="Present">Present</SelectItem>
                   <SelectItem value="Absent">Absent</SelectItem>
                   <SelectItem value="Late">Late</SelectItem>
@@ -641,6 +672,7 @@ export default function AdminAttendance() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Student</TableHead>
+                  <TableHead>Subject</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Time In</TableHead>
@@ -667,6 +699,7 @@ export default function AdminAttendance() {
                           <div className="text-sm text-muted-foreground">{record.admission_number}</div>
                         </div>
                       </TableCell>
+                      <TableCell>{subjects.find(s => s.id === record.subject_id)?.name || '-'}</TableCell>
                       <TableCell>{format(new Date(record.date), 'MMM dd, yyyy')}</TableCell>
                       <TableCell>{getStatusBadge(record.status)}</TableCell>
                       <TableCell>{record.time_in || '-'}</TableCell>
@@ -719,6 +752,21 @@ export default function AdminAttendance() {
                   {students.map((student) => (
                     <SelectItem key={student.id} value={student.id.toString()}>
                       {student.name} ({student.admission_number})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Subject</Label>
+              <Select value={formData.subject_id} onValueChange={(value) => setFormData({ ...formData, subject_id: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select subject" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subjects.map(subject => (
+                    <SelectItem key={subject.id} value={subject.id.toString()}>
+                      {subject.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

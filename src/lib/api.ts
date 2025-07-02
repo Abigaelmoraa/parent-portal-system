@@ -365,6 +365,11 @@ class ApiService {
     const query = new URLSearchParams(cleanParams).toString();
     return this.request(`/admin/attendance/statistics${query ? `?${query}` : ''}`);
   }
+
+  // Admin: Get all subjects
+  async getAdminSubjects() {
+    return this.request('/admin/subjects');
+  }
 }
 
 // Create and export API instance
