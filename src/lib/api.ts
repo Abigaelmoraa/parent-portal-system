@@ -394,7 +394,7 @@ class ApiService {
   // --- Admin Financials ---
 
   // Fee Structure
-  async getFeeStructure() {
+  async getAdminFeeStructure() {
     return this.request('/admin/financials/fee-structure');
   }
 

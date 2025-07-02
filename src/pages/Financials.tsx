@@ -3,15 +3,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { api, FeeStructure, FeePayment } from "@/lib/api";
-import { DollarSign, AlertTriangle, Download, Calendar, Receipt, FileText, Loader2 } from "lucide-react";
+import { DollarSign, AlertTriangle, Download, Calendar, Receipt, FileText, Loader2, CreditCard, Smartphone, Building2, CheckCircle } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { toast } from "sonner";
+import { generatePaymentReceipt, downloadPDF } from "@/lib/pdf-utils";
 
 export default function Financials() {
   const [feeStructure, setFeeStructure] = useState<FeeStructure[]>([]);
   const [feePayments, setFeePayments] = useState<FeePayment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [selectedFee, setSelectedFee] = useState<FeeStructure | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<string>('');
+  const [paymentAmount, setPaymentAmount] = useState<string>('');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   useEffect(() => {
     const fetchFinancialData = async () => {
@@ -133,6 +143,74 @@ export default function Financials() {
     // In a real app, this would generate and download a PDF
   };
 
+  const handlePayFee = (fee: FeeStructure) => {
+    setSelectedFee(fee);
+    setPaymentAmount(fee.amount.toString());
+    setIsPaymentDialogOpen(true);
+  };
+
+  const handlePaymentSubmit = async () => {
+    if (!selectedFee || !paymentMethod || !paymentAmount) {
+      toast.error("Please fill in all payment details");
+      return;
+    }
+
+    setIsProcessingPayment(true);
+    
+    try {
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Generate receipt
+      const receiptData = {
+        transactionId: `TXN${Date.now()}`,
+        studentName: "John Doe", // This would come from user context
+        feeType: selectedFee.fee_type,
+        amount: parseFloat(paymentAmount),
+        paymentMethod: paymentMethod,
+        paymentDate: new Date().toISOString(),
+        receiptNumber: `RCP${Date.now()}`
+      };
+
+      const doc = generatePaymentReceipt(receiptData);
+      const filename = `payment-receipt-${receiptData.transactionId}.pdf`;
+      downloadPDF(doc, filename);
+
+      toast.success("Payment processed successfully! Receipt downloaded.");
+      
+      // Reset form and close dialog
+      setIsPaymentDialogOpen(false);
+      setSelectedFee(null);
+      setPaymentMethod('');
+      setPaymentAmount('');
+      
+      // Refresh data
+      fetchFinancialData();
+    } catch (error) {
+      toast.error("Payment failed. Please try again.");
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const fetchFinancialData = async () => {
+    try {
+      const [structureData, paymentsData] = await Promise.all([
+        api.getFeeStructure(),
+        api.getFeePayments()
+      ]);
+      console.log('Fee Structure Data:', structureData);
+      console.log('Fee Payments Data:', paymentsData);
+      setFeeStructure(structureData);
+      setFeePayments(paymentsData);
+    } catch (error) {
+      toast.error("Failed to load financial data");
+      console.error("Financials error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -181,12 +259,13 @@ export default function Financials() {
         </TabsList>
 
         <TabsContent value="transactions" className="space-y-6">
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-0 shadow-lg">
+          {/* Fee Structure and Payment Section */}
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-0 shadow-lg">
             <CardHeader>
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle className="text-slate-800">School Fee Payments</CardTitle>
-                  <CardDescription className="text-slate-600">All university fee payments and transactions</CardDescription>
+                  <CardTitle className="text-green-900">Fee Structure & Payment</CardTitle>
+                  <CardDescription className="text-green-700">View and pay outstanding fees</CardDescription>
                 </div>
                 <Button variant="outline" onClick={() => handleDownloadReport('fee-statement')} className="bg-white">
                   <Download className="h-4 w-4 mr-2" />
@@ -195,28 +274,77 @@ export default function Financials() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {feeTransactions.map((transaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between p-4 bg-white/70 rounded-lg shadow-sm border border-slate-200">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-slate-600 rounded-full flex items-center justify-center">
-                        <Receipt className="h-5 w-5 text-white" />
-                      </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {feeStructure.map((fee) => (
+                  <div key={fee.id} className="bg-white/70 rounded-lg p-4 border border-green-200">
+                    <div className="flex justify-between items-start mb-3">
                       <div>
-                        <p className="font-medium text-slate-800">{transaction.description}</p>
-                        <p className="text-sm text-slate-600">
-                          {transaction.date} • ID: {transaction.id}
-                        </p>
+                        <h3 className="font-semibold text-green-900">{fee.fee_type}</h3>
+                        <p className="text-sm text-green-700">{fee.semester} {fee.academic_year}</p>
                       </div>
-                    </div>
-                    <div className="text-right space-y-1">
-                      <p className="font-bold text-slate-800">KSh {transaction.amount.toLocaleString()}</p>
-                      <Badge className={getStatusColor(transaction.status)}>
-                        {transaction.status}
+                      <Badge variant="outline" className="text-green-700 border-green-300">
+                        Due: {new Date(fee.due_date).toLocaleDateString()}
                       </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-2xl font-bold text-green-900">KSh {fee.amount.toLocaleString()}</p>
+                      {fee.description && (
+                        <p className="text-sm text-green-600">{fee.description}</p>
+                      )}
+                      <Button 
+                        onClick={() => handlePayFee(fee)}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Pay Fee
+                      </Button>
                     </div>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Payment History Section */}
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-0 shadow-lg">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="text-slate-800">Payment History</CardTitle>
+                  <CardDescription className="text-slate-600">All university fee payments and transactions</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {feeTransactions.length > 0 ? (
+                  feeTransactions.map((transaction) => (
+                    <div key={transaction.id} className="flex items-center justify-between p-4 bg-white/70 rounded-lg shadow-sm border border-slate-200">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 bg-slate-600 rounded-full flex items-center justify-center">
+                          <Receipt className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-800">{transaction.description}</p>
+                          <p className="text-sm text-slate-600">
+                            {transaction.date} • ID: {transaction.id}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right space-y-1">
+                        <p className="font-bold text-slate-800">KSh {transaction.amount.toLocaleString()}</p>
+                        <Badge className={getStatusColor(transaction.status)}>
+                          {transaction.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-slate-500">
+                    <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No payment history available</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -344,6 +472,118 @@ export default function Financials() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Payment Dialog */}
+      <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <CreditCard className="h-5 w-5 text-green-600" />
+              <span>Pay Fee</span>
+            </DialogTitle>
+            <DialogDescription>
+              Complete your fee payment using your preferred payment method
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {selectedFee && (
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <h3 className="font-semibold text-green-900">{selectedFee.fee_type}</h3>
+                <p className="text-sm text-green-700">{selectedFee.semester} {selectedFee.academic_year}</p>
+                <p className="text-lg font-bold text-green-900 mt-2">KSh {selectedFee.amount.toLocaleString()}</p>
+                {selectedFee.description && (
+                  <p className="text-sm text-green-600 mt-1">{selectedFee.description}</p>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <Label htmlFor="payment-method">Payment Method</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="M-Pesa">
+                    <div className="flex items-center space-x-2">
+                      <Smartphone className="h-4 w-4 text-green-600" />
+                      <span>M-Pesa</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="Bank Transfer">
+                    <div className="flex items-center space-x-2">
+                      <Building2 className="h-4 w-4 text-blue-600" />
+                      <span>Bank Transfer</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="Credit Card">
+                    <div className="flex items-center space-x-2">
+                      <CreditCard className="h-4 w-4 text-purple-600" />
+                      <span>Credit Card</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="Cash">
+                    <div className="flex items-center space-x-2">
+                      <DollarSign className="h-4 w-4 text-green-600" />
+                      <span>Cash</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-3">
+              <Label htmlFor="amount">Amount (KSh)</Label>
+              <Input
+                id="amount"
+                type="number"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                placeholder="Enter amount"
+              />
+            </div>
+
+            {paymentMethod === 'M-Pesa' && (
+              <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                <p className="text-sm text-yellow-800">
+                  <strong>M-Pesa Instructions:</strong>
+                </p>
+                <ol className="text-sm text-yellow-700 mt-2 space-y-1">
+                  <li>1. Go to M-Pesa menu</li>
+                  <li>2. Select "Pay Bill"</li>
+                  <li>3. Business Number: 123456</li>
+                  <li>4. Account Number: Your Student ID</li>
+                  <li>5. Amount: KSh {paymentAmount}</li>
+                </ol>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPaymentDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handlePaymentSubmit}
+              disabled={!paymentMethod || !paymentAmount || isProcessingPayment}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isProcessingPayment ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Pay Now
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

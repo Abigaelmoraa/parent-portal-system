@@ -285,4 +285,92 @@ const getGrade = (percentage: string): string => {
 
 export const downloadPDF = (doc: jsPDF, filename: string) => {
   doc.save(filename);
+};
+
+export interface PaymentReceiptData {
+  transactionId: string;
+  studentName: string;
+  feeType: string;
+  amount: number;
+  paymentMethod: string;
+  paymentDate: string;
+  receiptNumber: string;
+}
+
+export const generatePaymentReceipt = (receiptData: PaymentReceiptData) => {
+  const doc = new jsPDF();
+  
+  // Header
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text('UEAB - Payment Receipt', 105, 20, { align: 'center' });
+  
+  // School info
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('United States International University - Africa', 105, 30, { align: 'center' });
+  doc.text('Nairobi, Kenya', 105, 37, { align: 'center' });
+  
+  // Receipt details
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Payment Receipt', 20, 55);
+  
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  
+  // Receipt information
+  const startY = 70;
+  const lineHeight = 8;
+  
+  doc.text(`Receipt Number: ${receiptData.receiptNumber}`, 20, startY);
+  doc.text(`Transaction ID: ${receiptData.transactionId}`, 20, startY + lineHeight);
+  doc.text(`Date: ${new Date(receiptData.paymentDate).toLocaleDateString()}`, 20, startY + lineHeight * 2);
+  doc.text(`Time: ${new Date(receiptData.paymentDate).toLocaleTimeString()}`, 20, startY + lineHeight * 3);
+  
+  // Student information
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Student Information', 20, startY + lineHeight * 5);
+  
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Name: ${receiptData.studentName}`, 20, startY + lineHeight * 6);
+  
+  // Payment details
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Payment Details', 20, startY + lineHeight * 8);
+  
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Fee Type: ${receiptData.feeType}`, 20, startY + lineHeight * 9);
+  doc.text(`Payment Method: ${receiptData.paymentMethod}`, 20, startY + lineHeight * 10);
+  doc.text(`Amount Paid: KSh ${receiptData.amount.toLocaleString()}`, 20, startY + lineHeight * 11);
+  
+  // Amount in words
+  const amountInWords = numberToWords(receiptData.amount);
+  doc.text(`Amount in Words: ${amountInWords} Kenya Shillings Only`, 20, startY + lineHeight * 12);
+  
+  // Footer
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'italic');
+  doc.text('This is a computer generated receipt. No signature required.', 105, 250, { align: 'center' });
+  doc.text('Thank you for your payment!', 105, 255, { align: 'center' });
+  
+  return doc;
+};
+
+const numberToWords = (num: number): string => {
+  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  
+  if (num === 0) return 'Zero';
+  if (num < 10) return ones[num];
+  if (num < 20) return teens[num - 10];
+  if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 ? ' ' + ones[num % 10] : '');
+  if (num < 1000) return ones[Math.floor(num / 100)] + ' Hundred' + (num % 100 ? ' and ' + numberToWords(num % 100) : '');
+  if (num < 100000) return numberToWords(Math.floor(num / 1000)) + ' Thousand' + (num % 1000 ? ' ' + numberToWords(num % 1000) : '');
+  return numberToWords(Math.floor(num / 100000)) + ' Hundred Thousand' + (num % 100000 ? ' ' + numberToWords(num % 100000) : '');
 }; 

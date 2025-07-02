@@ -28,7 +28,7 @@ const AdminFinancials: React.FC = () => {
   const fetchFeeStructure = async () => {
     setFeeLoading(true);
     try {
-      const res = await api.getFeeStructure();
+      const res = await api.getAdminFeeStructure();
       setFeeStructure(res.data.feeStructure);
     } catch (e) {
       // handle error
