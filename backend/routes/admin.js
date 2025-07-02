@@ -698,4 +698,109 @@ router.get('/statistics', authenticateToken, checkAdminAccess, async (req, res) 
   }
 });
 
+// --- ADMIN RESULTS MANAGEMENT ---
+
+// GET /api/admin/results - List all results (with optional filters)
+router.get('/results', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const { search = '', studentId } = req.query;
+    let where = 'WHERE 1=1';
+    const params = [];
+    if (studentId) {
+      where += ' AND ar.student_id = ?';
+      params.push(studentId);
+    }
+    if (search) {
+      where += ' AND (s.name LIKE ? OR ar.subject_name LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`);
+    }
+    const [results] = await pool.execute(
+      `SELECT ar.*, s.name as student_name
+       FROM academic_results ar
+       JOIN students s ON ar.student_id = s.id
+       ${where}
+       ORDER BY ar.assessment_date DESC, ar.id DESC
+       LIMIT 200`,
+      params
+    );
+    res.json({ success: true, data: { results } });
+  } catch (error) {
+    console.error('Admin get results error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// POST /api/admin/results - Create a result
+router.post('/results', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const {
+      student_id,
+      subject_id,
+      subject_name,
+      assessment_type,
+      score,
+      max_score,
+      grade,
+      semester,
+      academic_year,
+      assessment_date,
+      remarks
+    } = req.body;
+    if (!student_id || !subject_name || !assessment_type || !score || !max_score || !semester || !academic_year || !assessment_date) {
+      return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+    const [result] = await pool.execute(
+      `INSERT INTO academic_results (student_id, subject_id, subject_name, assessment_type, score, max_score, grade, semester, academic_year, assessment_date, remarks)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [student_id, subject_id || null, subject_name, assessment_type, score, max_score, grade || null, semester, academic_year, assessment_date, remarks || null]
+    );
+    res.status(201).json({ success: true, message: 'Result created', data: { id: result.insertId } });
+  } catch (error) {
+    console.error('Admin create result error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// PUT /api/admin/results/:id - Update a result
+router.put('/results/:id', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const fields = [
+      'student_id', 'subject_id', 'subject_name', 'assessment_type', 'score', 'max_score', 'grade', 'semester', 'academic_year', 'assessment_date', 'remarks'
+    ];
+    const updates = [];
+    const values = [];
+    for (const field of fields) {
+      if (req.body[field] !== undefined) {
+        updates.push(`${field} = ?`);
+        values.push(req.body[field]);
+      }
+    }
+    if (updates.length === 0) {
+      return res.status(400).json({ success: false, message: 'No fields to update' });
+    }
+    values.push(id);
+    await pool.execute(
+      `UPDATE academic_results SET ${updates.join(', ')} WHERE id = ?`,
+      values
+    );
+    res.json({ success: true, message: 'Result updated' });
+  } catch (error) {
+    console.error('Admin update result error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// DELETE /api/admin/results/:id - Delete a result
+router.delete('/results/:id', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.execute('DELETE FROM academic_results WHERE id = ?', [id]);
+    res.json({ success: true, message: 'Result deleted' });
+  } catch (error) {
+    console.error('Admin delete result error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
 module.exports = router; 

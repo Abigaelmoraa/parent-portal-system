@@ -288,6 +288,32 @@ class ApiService {
       method: 'DELETE',
     });
   }
+
+  // Admin: Results endpoints
+  async getAdminResults(params: { search?: string; studentId?: number } = {}) {
+    const query = new URLSearchParams(params as Record<string, string>).toString();
+    return this.request(`/admin/results${query ? `?${query}` : ''}`);
+  }
+
+  async createAdminResult(payload: Partial<AcademicResult>) {
+    return this.request('/admin/results', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async updateAdminResult(id: number, payload: Partial<AcademicResult>) {
+    return this.request(`/admin/results/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteAdminResult(id: number) {
+    return this.request(`/admin/results/${id}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 // Create and export API instance
