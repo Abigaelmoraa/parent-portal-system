@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Download } from 'lucide-react';
 import { api } from '@/lib/api';
+import { generateFinancialReport, downloadPDF, FinancialSummary } from '@/lib/pdf-utils';
 
 const semesters = ['Semester 1', 'Semester 2'];
 
@@ -79,11 +80,27 @@ const AdminFinancials: React.FC = () => {
     fetchFeeStructure();
   };
 
+  const handleDownloadReport = () => {
+    try {
+      const doc = generateFinancialReport(feeStructure, summary);
+      const filename = `financial-report-${new Date().toISOString().split('T')[0]}.pdf`;
+      downloadPDF(doc, filename);
+    } catch (error) {
+      console.error('Failed to generate financial report:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Financial Management</h1>
-        <p className="text-gray-600">Manage student fees and financial records</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Financial Management</h1>
+          <p className="text-gray-600">Manage student fees and financial records</p>
+        </div>
+        <Button onClick={handleDownloadReport} variant="outline">
+          <Download className="w-4 h-4 mr-2" />
+          Download Report
+        </Button>
       </div>
       <Tabs defaultValue="fee-structure">
         <TabsList className="mb-4">

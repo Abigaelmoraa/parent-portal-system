@@ -6,9 +6,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Eye, Download } from 'lucide-react';
 import { api, AcademicResult, Student } from '@/lib/api';
 import { toast } from 'sonner';
+import { generateResultsReport, downloadPDF } from '@/lib/pdf-utils';
 
 const AdminResults: React.FC = () => {
   const [results, setResults] = useState<AcademicResult[]>([]);
@@ -77,6 +78,18 @@ const AdminResults: React.FC = () => {
     }
   };
 
+  const handleDownloadReport = () => {
+    try {
+      const doc = generateResultsReport(results, students);
+      const filename = `results-report-${new Date().toISOString().split('T')[0]}.pdf`;
+      downloadPDF(doc, filename);
+      toast.success('Results report downloaded successfully');
+    } catch (error) {
+      console.error('Failed to generate results report:', error);
+      toast.error('Failed to generate results report');
+    }
+  };
+
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -119,13 +132,18 @@ const AdminResults: React.FC = () => {
           <h1 className="text-3xl font-bold">Results Management</h1>
           <p className="text-gray-600">Manage student academic results</p>
         </div>
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogTrigger asChild>
-            <Button onClick={() => { setEditResult(null); setForm({}); setShowDialog(true); }}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Result
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button onClick={handleDownloadReport} variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            Download Report
+          </Button>
+          <Dialog open={showDialog} onOpenChange={setShowDialog}>
+            <DialogTrigger asChild>
+              <Button onClick={() => { setEditResult(null); setForm({}); setShowDialog(true); }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Result
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogTitle>{editResult ? 'Edit Result' : 'Add New Result'}</DialogTitle>
             <form className="space-y-4" onSubmit={handleFormSubmit}>
@@ -250,6 +268,7 @@ const AdminResults: React.FC = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Search and Filter */}

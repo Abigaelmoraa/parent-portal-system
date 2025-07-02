@@ -15,13 +15,7 @@ import { format } from 'date-fns';
 import { api, Attendance, Student } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-
-interface AttendanceRecord extends Attendance {
-  student_name: string;
-  admission_number: string;
-  grade: string;
-  course: string;
-}
+import { generateAttendanceReport, downloadPDF, AttendanceRecord } from '@/lib/pdf-utils';
 
 interface AttendanceStats {
   total_records: number;
@@ -270,6 +264,25 @@ export default function AdminAttendance() {
     });
   };
 
+  const handleDownloadReport = () => {
+    try {
+      const doc = generateAttendanceReport(attendance, stats, filters);
+      const filename = `attendance-report-${new Date().toISOString().split('T')[0]}.pdf`;
+      downloadPDF(doc, filename);
+      
+      toast({
+        title: 'Success',
+        description: 'Attendance report downloaded successfully'
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to generate attendance report',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const openEditDialog = (record: AttendanceRecord) => {
     setSelectedRecord(record);
     setFormData({
@@ -315,6 +328,10 @@ export default function AdminAttendance() {
           <p className="text-muted-foreground">Manage student attendance records</p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={handleDownloadReport} variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            Download Report
+          </Button>
           <Dialog open={isBulkDialogOpen} onOpenChange={setIsBulkDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={prepareBulkRecords}>
