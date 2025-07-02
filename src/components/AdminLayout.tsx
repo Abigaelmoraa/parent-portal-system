@@ -61,16 +61,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       current: location.pathname === '/admin/financials'
     },
     {
-      name: 'Reports',
-      href: '/admin/reports',
-      icon: BarChart3,
-      current: location.pathname === '/admin/reports'
-    },
-    {
-      name: 'Settings',
-      href: '/admin/settings',
-      icon: Settings,
-      current: location.pathname === '/admin/settings'
+      name: 'Parents',
+      href: '/admin/parents',
+      icon: Users,
+      current: location.pathname === '/admin/parents'
     }
   ];
 

@@ -23,6 +23,7 @@ import AdminAttendance from './pages/admin/AdminAttendance';
 import AdminFinancials from './pages/admin/AdminFinancials';
 import AdminReports from './pages/admin/AdminReports';
 import AdminSettings from './pages/admin/AdminSettings';
+import AdminParents from './pages/admin/AdminParents';
 
 const queryClient = new QueryClient();
 
@@ -140,6 +141,13 @@ const App = () => (
               <AdminProtectedRoute>
                 <AdminLayout>
                   <AdminSettings />
+                </AdminLayout>
+              </AdminProtectedRoute>
+            } />
+            <Route path="/admin/parents" element={
+              <AdminProtectedRoute>
+                <AdminLayout>
+                  <AdminParents />
                 </AdminLayout>
               </AdminProtectedRoute>
             } />

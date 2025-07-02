@@ -370,6 +370,76 @@ class ApiService {
   async getAdminSubjects() {
     return this.request('/admin/subjects');
   }
+
+  // Admin: Get all parents with their students and relationships
+  async getAdminParents() {
+    return this.request('/admin/parents');
+  }
+
+  // Admin: Assign a student to a parent
+  async assignStudentToParent(parentId: number, payload: { student_id: number; relationship_type: string; is_primary_guardian?: boolean }) {
+    return this.request(`/admin/parents/${parentId}/assign`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Admin: Unassign a student from a parent
+  async unassignStudentFromParent(parentId: number, studentId: number) {
+    return this.request(`/admin/parents/${parentId}/unassign/${studentId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // --- Admin Financials ---
+
+  // Fee Structure
+  async getFeeStructure() {
+    return this.request('/admin/financials/fee-structure');
+  }
+
+  async addFeeItem(data: any) {
+    return this.request('/admin/financials/fee-structure', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateFeeItem(id: number, data: any) {
+    return this.request(`/admin/financials/fee-structure/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteFeeItem(id: number) {
+    return this.request(`/admin/financials/fee-structure/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Payments
+  async getPayments(params?: any) {
+    return this.request('/admin/financials/payments', { params });
+  }
+
+  async addPayment(data: any) {
+    return this.request('/admin/financials/payments', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deletePayment(id: number) {
+    return this.request(`/admin/financials/payments/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Financial Summary
+  async getFinancialSummary() {
+    return this.request('/admin/financials/summary');
+  }
 }
 
 // Create and export API instance

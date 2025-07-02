@@ -1040,4 +1040,213 @@ router.get('/subjects', authenticateToken, checkAdminAccess, async (req, res) =>
   }
 });
 
+// GET /api/admin/parents - List all parents with their students and relationships
+router.get('/parents', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const [parents] = await pool.execute('SELECT * FROM parents ORDER BY name');
+    // For each parent, get their students and relationship
+    const parentIds = parents.map(p => p.id);
+    let parentStudentMap = {};
+    if (parentIds.length > 0) {
+      const [relations] = await pool.execute(
+        `SELECT ps.parent_id, ps.student_id, ps.relationship_type, ps.is_primary_guardian, s.name as student_name, s.admission_number
+         FROM parent_student ps
+         JOIN students s ON ps.student_id = s.id
+         WHERE ps.parent_id IN (${parentIds.map(() => '?').join(',')})`,
+        parentIds
+      );
+      for (const rel of relations) {
+        if (!parentStudentMap[rel.parent_id]) parentStudentMap[rel.parent_id] = [];
+        parentStudentMap[rel.parent_id].push({
+          student_id: rel.student_id,
+          student_name: rel.student_name,
+          admission_number: rel.admission_number,
+          relationship_type: rel.relationship_type,
+          is_primary_guardian: !!rel.is_primary_guardian
+        });
+      }
+    }
+    const result = parents.map(parent => ({
+      ...parent,
+      students: parentStudentMap[parent.id] || []
+    }));
+    res.json({ success: true, data: { parents: result } });
+  } catch (error) {
+    console.error('Admin get parents error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// POST /api/admin/parents/:parentId/assign - Assign a student to a parent
+router.post('/parents/:parentId/assign', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const { parentId } = req.params;
+    const { student_id, relationship_type, is_primary_guardian } = req.body;
+    if (!student_id || !relationship_type) {
+      return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+    // Check if already assigned
+    const [existing] = await pool.execute(
+      'SELECT * FROM parent_student WHERE parent_id = ? AND student_id = ?',
+      [parentId, student_id]
+    );
+    if (existing.length > 0) {
+      return res.status(400).json({ success: false, message: 'Student already assigned to this parent' });
+    }
+    await pool.execute(
+      'INSERT INTO parent_student (parent_id, student_id, relationship_type, is_primary_guardian) VALUES (?, ?, ?, ?)',
+      [parentId, student_id, relationship_type, is_primary_guardian ? 1 : 0]
+    );
+    res.status(201).json({ success: true, message: 'Student assigned to parent' });
+  } catch (error) {
+    console.error('Admin assign student to parent error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// DELETE /api/admin/parents/:parentId/unassign/:studentId - Unassign a student from a parent
+router.delete('/parents/:parentId/unassign/:studentId', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const { parentId, studentId } = req.params;
+    await pool.execute('DELETE FROM parent_student WHERE parent_id = ? AND student_id = ?', [parentId, studentId]);
+    res.json({ success: true, message: 'Student unassigned from parent' });
+  } catch (error) {
+    console.error('Admin unassign student from parent error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// --- ADMIN FINANCIALS MANAGEMENT ---
+
+// 1. Fee Structure
+router.get('/financials/fee-structure', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const [feeStructure] = await pool.execute('SELECT * FROM fee_structure ORDER BY due_date DESC, id DESC');
+    res.json({ success: true, data: { feeStructure } });
+  } catch (error) {
+    console.error('Admin get fee structure error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+router.post('/financials/fee-structure', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const { fee_type, amount, semester, academic_year, due_date, description } = req.body;
+    if (!fee_type || !amount || !semester || !academic_year || !due_date) {
+      return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+    await pool.execute(
+      'INSERT INTO fee_structure (fee_type, amount, semester, academic_year, due_date, description) VALUES (?, ?, ?, ?, ?, ?)',
+      [fee_type, amount, semester, academic_year, due_date, description || null]
+    );
+    res.status(201).json({ success: true, message: 'Fee item added' });
+  } catch (error) {
+    console.error('Admin add fee structure error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+router.put('/financials/fee-structure/:id', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { fee_type, amount, semester, academic_year, due_date, description } = req.body;
+    await pool.execute(
+      'UPDATE fee_structure SET fee_type = ?, amount = ?, semester = ?, academic_year = ?, due_date = ?, description = ? WHERE id = ?',
+      [fee_type, amount, semester, academic_year, due_date, description || null, id]
+    );
+    res.json({ success: true, message: 'Fee item updated' });
+  } catch (error) {
+    console.error('Admin update fee structure error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+router.delete('/financials/fee-structure/:id', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.execute('DELETE FROM fee_structure WHERE id = ?', [id]);
+    res.json({ success: true, message: 'Fee item deleted' });
+  } catch (error) {
+    console.error('Admin delete fee structure error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// 2. Payments
+router.get('/financials/payments', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const { studentId, status, semester, academic_year } = req.query;
+    let where = 'WHERE 1=1';
+    const params = [];
+    if (studentId) { where += ' AND fp.student_id = ?'; params.push(studentId); }
+    if (status) { where += ' AND fp.status = ?'; params.push(status); }
+    if (semester) { where += ' AND fs.semester = ?'; params.push(semester); }
+    if (academic_year) { where += ' AND fs.academic_year = ?'; params.push(academic_year); }
+    const [payments] = await pool.execute(
+      `SELECT fp.*, s.name as student_name, s.admission_number, fs.fee_type, fs.amount as fee_amount
+       FROM fee_payments fp
+       JOIN students s ON fp.student_id = s.id
+       JOIN fee_structure fs ON fp.fee_structure_id = fs.id
+       ${where}
+       ORDER BY fp.payment_date DESC, fp.id DESC
+       LIMIT 200`,
+      params
+    );
+    res.json({ success: true, data: { payments } });
+  } catch (error) {
+    console.error('Admin get payments error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+router.post('/financials/payments', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const { student_id, fee_structure_id, amount_paid, payment_date, payment_method, status, transaction_id, receipt_number, remarks } = req.body;
+    if (!student_id || !fee_structure_id || !amount_paid || !payment_date || !payment_method || !status) {
+      return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+    await pool.execute(
+      'INSERT INTO fee_payments (student_id, fee_structure_id, amount_paid, payment_date, payment_method, status, transaction_id, receipt_number, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [student_id, fee_structure_id, amount_paid, payment_date, payment_method, status, transaction_id || null, receipt_number || null, remarks || null]
+    );
+    res.status(201).json({ success: true, message: 'Payment added' });
+  } catch (error) {
+    console.error('Admin add payment error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+router.delete('/financials/payments/:id', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.execute('DELETE FROM fee_payments WHERE id = ?', [id]);
+    res.json({ success: true, message: 'Payment deleted' });
+  } catch (error) {
+    console.error('Admin delete payment error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// 3. Financial Summary
+router.get('/financials/summary', authenticateToken, checkAdminAccess, async (req, res) => {
+  try {
+    // Per-student summary
+    const [summary] = await pool.execute(
+      `SELECT s.id as student_id, s.name as student_name, s.admission_number,
+              SUM(fs.amount) as total_fees,
+              COALESCE(SUM(CASE WHEN fp.status = 'Paid' THEN fp.amount_paid ELSE 0 END), 0) as paid_fees,
+              SUM(fs.amount) - COALESCE(SUM(CASE WHEN fp.status = 'Paid' THEN fp.amount_paid ELSE 0 END), 0) as outstanding_fees
+       FROM students s
+       LEFT JOIN fee_structure fs ON fs.semester = s.semester AND fs.academic_year = s.academic_year
+       LEFT JOIN fee_payments fp ON fp.student_id = s.id AND fp.fee_structure_id = fs.id
+       WHERE s.is_active = TRUE
+       GROUP BY s.id, s.name, s.admission_number
+       ORDER BY s.name`);
+    res.json({ success: true, data: { summary } });
+  } catch (error) {
+    console.error('Admin get financial summary error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
 module.exports = router; 
