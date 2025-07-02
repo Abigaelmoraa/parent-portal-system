@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,26 +12,38 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const { login, isLoading } = useAuth();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { login, isLoading, user } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
     
     if (!email || !password) {
       toast.error("Please fill in all fields");
+      setLoading(false);
       return;
     }
 
     try {
-      const success = await login(email, password);
-      if (success) {
-        toast.success("Welcome back!");
-        navigate("/dashboard");
+      const result = await login(email, password);
+      setLoading(false);
+      if (result.success && result.user) {
+        if (result.user.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
+      } else {
+        setError('Invalid email or password');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Invalid credentials. Please try again.";
       toast.error(errorMessage);
+      setLoading(false);
     }
   };
 
@@ -112,8 +123,8 @@ export default function Login() {
                   </Button>
                 </div>
               </div>
-              <Button type="submit" className="w-full h-11" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign in"}
+              <Button type="submit" className="w-full h-11" disabled={loading}>
+                {loading ? "Signing in..." : "Sign in"}
               </Button>
             </form>
             <div className="mt-6 text-center">

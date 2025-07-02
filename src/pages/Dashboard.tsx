@@ -112,7 +112,7 @@ export default function Dashboard() {
 
       {/* Recent Activities */}
       <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-0 shadow-lg">
-        <CardHeader>
+            <CardHeader>
           <CardTitle className="flex items-center space-x-2 text-slate-800">
             <div className="w-8 h-8 bg-slate-600 rounded-lg flex items-center justify-center">
               <BookOpen className="h-4 w-4 text-white" />
@@ -126,21 +126,21 @@ export default function Dashboard() {
             {recentActivities.length > 0 ? (
               recentActivities.map((activity, index) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-white/70 rounded-lg shadow-sm border border-slate-200">
-                  <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center">
                       <GraduationCap className="h-4 w-4 text-white" />
-                    </div>
-                    <div>
+                </div>
+                <div>
                       <p className="font-medium text-slate-800">{activity.subject_name}</p>
                       <p className="text-sm text-slate-600">{activity.assessment_type}</p>
-                    </div>
-                  </div>
+                </div>
+              </div>
                   <div className="text-right">
                     <Badge variant={activity.grade?.startsWith('A') ? 'default' : 'secondary'} className="mb-1">
                       {activity.grade || `${activity.score}/${activity.max_score}`}
                     </Badge>
                     <p className="text-xs text-slate-500">{new Date(activity.assessment_date).toLocaleDateString()}</p>
-                  </div>
+              </div>
                 </div>
               ))
             ) : (
@@ -149,9 +149,9 @@ export default function Dashboard() {
                 <p>No recent academic activities</p>
               </div>
             )}
-          </div>
-        </CardContent>
-      </Card>
+              </div>
+            </CardContent>
+          </Card>
 
       {/* Recent Activities */}
       <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-0 shadow-lg">

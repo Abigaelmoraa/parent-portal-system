@@ -10,6 +10,7 @@ export interface User {
   address?: string;
   relationship?: string;
   created_at: string;
+  role: string; // 'admin' or 'parent'
 }
 
 export interface Student {
@@ -135,6 +136,10 @@ export interface Notification {
   created_at: string;
 }
 
+// --- ADMIN API ---
+
+export interface AdminStudentPayload extends Partial<Student> {}
+
 // Helper function to get auth token
 const getAuthToken = (): string | null => {
   return localStorage.getItem('parenthub_token');
@@ -248,6 +253,40 @@ class ApiService {
 
   async markNotificationRead(id: number): Promise<void> {
     await this.request(`/dashboard/notifications/${id}/read`, { method: 'PUT' });
+  }
+
+  // Admin: Dashboard stats
+  async getAdminDashboard() {
+    return this.request('/admin/dashboard');
+  }
+
+  // Admin: Get all students
+  async getAdminStudents(params: { page?: number; limit?: number; search?: string; grade?: string; course?: string } = {}) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request(`/admin/students${query ? `?${query}` : ''}`);
+  }
+
+  // Admin: Create student
+  async createAdminStudent(payload: AdminStudentPayload) {
+    return this.request('/admin/students', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Admin: Update student
+  async updateAdminStudent(studentId: number, payload: AdminStudentPayload) {
+    return this.request(`/admin/students/${studentId}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Admin: Delete student
+  async deleteAdminStudent(studentId: number) {
+    return this.request(`/admin/students/${studentId}`, {
+      method: 'DELETE',
+    });
   }
 }
 

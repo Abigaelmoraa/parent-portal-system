@@ -1,10 +1,9 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api, User } from '@/lib/api';
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; user?: User }>;
   signup: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
@@ -45,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; user?: User }> => {
     setIsLoading(true);
     
     try {
@@ -56,10 +55,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('parenthub_token', token);
       localStorage.setItem('parenthub_user', JSON.stringify(user));
       setIsLoading(false);
-      return true;
+      return { success: true, user };
     } catch (error) {
       setIsLoading(false);
-      return false;
+      return { success: false };
     }
   };
 
@@ -69,12 +68,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await api.signup(name, email, password);
       const { user, token } = response.data;
-      
+    
       setUser(user);
       localStorage.setItem('parenthub_token', token);
       localStorage.setItem('parenthub_user', JSON.stringify(user));
-      setIsLoading(false);
-      return true;
+    setIsLoading(false);
+    return true;
     } catch (error) {
       setIsLoading(false);
       throw error;

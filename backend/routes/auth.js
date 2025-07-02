@@ -19,7 +19,7 @@ const generateToken = (userId) => {
 // Helper function to get user with children
 const getUserWithChildren = async (userId) => {
   const [users] = await pool.execute(
-    `SELECT p.id, p.name, p.email, p.phone, p.address, p.relationship
+    `SELECT p.id, p.name, p.email, p.phone, p.address, p.relationship, p.role
      FROM parents p 
      WHERE p.id = ? AND p.is_active = TRUE`,
     [userId]
