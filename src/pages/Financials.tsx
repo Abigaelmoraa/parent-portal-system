@@ -229,7 +229,7 @@ export default function Financials() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold">School Fees Overview</h1>
         <p className="text-muted-foreground">
-          Track university fees, payments, and financial activities for UEAB education.
+          Track university fees, payments, and financial activities for UEAB.
         </p>
       </div>
 
@@ -265,7 +265,7 @@ export default function Financials() {
               <div className="flex justify-between items-center">
                 <div>
                   <CardTitle className="text-green-900">Fee Structure & Payment</CardTitle>
-                  <CardDescription className="text-green-700">View and pay outstanding fees</CardDescription>
+                  <CardDescription className="text-blue-700">View and pay outstanding fees</CardDescription>
                 </div>
                 <Button variant="outline" onClick={() => handleDownloadReport('fee-statement')} className="bg-white">
                   <Download className="h-4 w-4 mr-2" />

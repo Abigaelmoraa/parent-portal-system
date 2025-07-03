@@ -65,7 +65,7 @@ export default function Index() {
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <GraduationCap className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold">Parents Portal</span>
+            <span className="text-xl font-bold">UEAB Parents Portal</span>
           </div>
           <div className="space-x-4">
             <Button variant="ghost" asChild>
@@ -83,11 +83,11 @@ export default function Index() {
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
             University of Eastern Africa, Baraton
-            <span className="text-primary block mt-2">Student Progress Portal</span>
+            <span className="text-primary block mt-2">Parent Portal</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Parents Portal is the complete platform for parents and students to track academic results, monitor attendance, 
-            manage university finances, and stay engaged with your educational journey.
+            Parents Portal is the complete platform for parents to track academic results, monitor attendance, 
+            manage university finances of their children, and stay engaged with their educational journey.
           </p>
           <div className="space-x-4">
             <Button size="lg" asChild>
@@ -111,7 +111,7 @@ export default function Index() {
               Everything You Need for University Success
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Comprehensive tools designed specifically for UEAB students and parents to monitor and support academic success.
+              Comprehensive tools designed specifically for UEAB parents to monitor and support their children's academic success.
             </p>
           </div>
           
@@ -167,7 +167,7 @@ export default function Index() {
               Trusted by UEAB Families
             </h2>
             <p className="text-lg text-gray-600">
-              See what other parents are saying about Parents Portal
+              See what other parents are saying about UEAB Parents Portal
             </p>
           </div>
           
@@ -199,7 +199,7 @@ export default function Index() {
             Ready to Get Started?
           </h2>
           <p className="text-lg text-gray-600 mb-8">
-            Join UEAB students and parents who are already using our portal to stay connected with university education.
+            Join UEAB parents who are already using our portal to stay connected with university education.
           </p>
           <div className="space-x-4">
             <Button size="lg" asChild>

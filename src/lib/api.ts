@@ -1,5 +1,5 @@
 // API Base URL
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:12000/api';
 
 // Types
 export interface User {
@@ -420,7 +420,9 @@ class ApiService {
 
   // Payments
   async getPayments(params?: any) {
-    return this.request('/admin/financials/payments', { params });
+    return this.request('/admin/financials/payments', { 
+      method: 'GET',
+     });
   }
 
   async addPayment(data: any) {
