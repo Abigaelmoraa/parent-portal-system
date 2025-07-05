@@ -108,7 +108,7 @@ export default function Profile() {
             </div>
             <div className="flex items-center space-x-2 text-sm">
               <GraduationCap className="h-4 w-4 text-muted-foreground" />
-              <span>{students.length} Children Enrolled</span>
+              <span>{students.length} Childrent Enrolled</span>
             </div>
           </CardContent>
         </Card>

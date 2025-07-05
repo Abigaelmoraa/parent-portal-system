@@ -4,7 +4,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { GraduationCap, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,14 +20,14 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login, isLoading, user } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
-    
+
     if (!email || !password) {
       toast.error("Please fill in all fields");
       setLoading(false);
@@ -32,18 +38,51 @@ export default function Login() {
       const result = await login(email, password);
       setLoading(false);
       if (result.success && result.user) {
-        if (result.user.role === 'admin') {
-          navigate('/admin/dashboard');
+        if (result.user.role === "admin") {
+          navigate("/admin/dashboard");
         } else {
-          navigate('/dashboard');
+          navigate("/dashboard");
         }
       } else {
-        setError('Invalid email or password');
+        setError("Invalid email or password");
+        toast.error("Invalid email or password");
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Invalid credentials. Please try again.";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Invalid credentials. Please try again.";
       toast.error(errorMessage);
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    const userEmail = prompt(
+      "Please enter your email to receive reset instructions:"
+    );
+
+    if (!userEmail) {
+      toast.warning("Email is required to reset password.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: userEmail }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success("Password reset email sent. Please check your inbox.");
+      } else {
+        toast.error(data.message || "Failed to send reset email.");
+      }
+    } catch (err) {
+      toast.error("An error occurred. Try again later.");
     }
   };
 
@@ -52,8 +91,8 @@ export default function Login() {
       {/* Left Side - Image */}
       <div className="hidden lg:flex lg:w-1/2 relative">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-indigo-600/20 z-10" />
-        <img 
-          src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=600&fit=crop" 
+        <img
+          src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=600&fit=crop"
           alt="Students studying"
           className="w-full h-full object-cover"
         />
@@ -62,8 +101,12 @@ export default function Login() {
             <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-6">
               <GraduationCap className="h-8 w-8 text-white" />
             </div>
-            <h2 className="text-3xl font-bold mb-4">University of Eastern Africa, Baraton</h2>
-            <p className="text-lg opacity-90">Empowering minds, transforming lives through quality education</p>
+            <h2 className="text-3xl font-bold mb-4">
+              University of Eastern Africa, Baraton
+            </h2>
+            <p className="text-lg opacity-90">
+              Empowering minds, transforming lives through quality education
+            </p>
           </div>
         </div>
       </div>
@@ -77,9 +120,10 @@ export default function Login() {
                 <GraduationCap className="h-7 w-7 text-primary-foreground" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+            <CardTitle className="text-2xl font-bold">Welcome back!</CardTitle>
             <CardDescription>
-              Sign in to your Parents Portal account to track your child's progress
+              Sign in to your UEAB Parents Portal account to track your child's
+              progress
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -122,6 +166,15 @@ export default function Login() {
                     )}
                   </Button>
                 </div>
+                <div className="flex justify-end text-sm">
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    className="text-primary hover:underline"
+                  >
+                    Forgot password
+                  </button>
+                </div>
               </div>
               <Button type="submit" className="w-full h-11" disabled={loading}>
                 {loading ? "Signing in..." : "Sign in"}
@@ -130,7 +183,10 @@ export default function Login() {
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
                 Don't have an account?{" "}
-                <Link to="/signup" className="text-primary hover:underline font-medium">
+                <Link
+                  to="/signup"
+                  className="text-primary hover:underline font-medium"
+                >
                   Sign up
                 </Link>
               </p>
@@ -141,3 +197,4 @@ export default function Login() {
     </div>
   );
 }
+

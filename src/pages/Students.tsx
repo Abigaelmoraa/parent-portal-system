@@ -82,9 +82,9 @@ export default function Students() {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold">Student Management</h1>
+        <h1 className="text-3xl font-bold">Student Profile</h1>
         <p className="text-muted-foreground">
-          View and manage your children's personal information and academic details.
+          View and manage your child's personal information and academic details.
         </p>
       </div>
 

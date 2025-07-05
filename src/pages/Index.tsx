@@ -67,9 +67,10 @@ export default function Index() {
             </div>
             <span className="text-xl font-bold">UEAB Parents Portal</span>
           </div>
-          <div className="space-x-4">
-            <Button variant="ghost" asChild>
-              <Link to="/login">Sign In</Link>
+         <div className="space-x-4">
+           <Button asChild className="bg-green-600 hover:bg-green-700 text-white">
+            <Link to="/login">Sign In</Link>
+
             </Button>
             <Button asChild>
               <Link to="/signup">Get Started</Link>
@@ -80,30 +81,30 @@ export default function Index() {
 
       {/* Hero Section */}
       <section className="px-6 py-20">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            University of Eastern Africa, Baraton
-            <span className="text-primary block mt-2">Parent Portal</span>
-          </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Parents Portal is the complete platform for parents to track academic results, monitor attendance, 
-            manage university finances of their children, and stay engaged with their educational journey.
-          </p>
-          <div className="space-x-4">
-            <Button size="lg" asChild>
-              <Link to="/signup" className="flex items-center">
-                Start Free Trial
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link to="/login">Sign In</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
+  <div className="max-w-7xl mx-auto text-center">
+    <h1 className="text-5xl font-bold text-gray-900 mb-6">
+      University of Eastern Africa, Baraton
+      <span className="text-primary block mt-2">Parent Portal</span>
+    </h1>
+    <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+      Parents Portal is the complete platform for parents to track academic results, monitor attendance, 
+      manage university finances of their children, and stay engaged with their educational journey.
+    </p>
+    <div className="space-x-4">
+      <Button size="lg" asChild>
+        <Link to="/signup" className="flex items-center">
+          Start Free Trial
+          <ArrowRight className="ml-2 h-5 w-5" />
+        </Link>
+      </Button>
 
-      {/* Features Section */}
+      <Button asChild className="bg-green-600 hover:bg-green-700 text-white">
+        <Link to="/login">Sign In</Link>
+      </Button>
+    </div>
+  </div>
+</section>
+
       <section className="px-6 py-20 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -135,63 +136,6 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="px-6 py-20 bg-primary text-primary-foreground">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl font-bold mb-2">3K+</div>
-              <div className="text-lg opacity-90">Active Students</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">2K+</div>
-              <div className="text-lg opacity-90">Parent Accounts</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">12</div>
-              <div className="text-lg opacity-90">Faculties</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">99.9%</div>
-              <div className="text-lg opacity-90">Uptime</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="px-6 py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Trusted by UEAB Families
-            </h2>
-            <p className="text-lg text-gray-600">
-              See what other parents are saying about UEAB Parents Portal
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                    ))}
-                  </div>
-                  <p className="text-gray-600 mb-4">"{testimonial.content}"</p>
-                  <div>
-                    <p className="font-semibold">{testimonial.name}</p>
-                    <p className="text-sm text-gray-500">{testimonial.role}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="px-6 py-20 bg-white">
         <div className="max-w-4xl mx-auto text-center">
@@ -208,7 +152,7 @@ export default function Index() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" asChild>
+            <Button size="lg" asChild className="bg-green-600 hover:bg-green-700 text-white">
               <Link to="/login">Sign In</Link>
             </Button>
           </div>
@@ -223,7 +167,7 @@ export default function Index() {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <GraduationCap className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold">Parents Portal</span>
+              <span className="text-xl font-bold"> UEAB Parents Portal</span>
             </div>
             <div className="text-sm text-gray-400">
               © 2024 University of Eastern Africa, Baraton. All rights reserved.

@@ -41,13 +41,13 @@ export function AppSidebar() {
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <GraduationCap className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-lg font-bold text-sidebar-foreground">Parents Portal</span>
+          <span className="text-lg font-bold text-sidebar-foreground"> UEAB Parents Portal</span>
         </div>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>HOME</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (

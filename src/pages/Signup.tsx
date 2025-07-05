@@ -64,7 +64,7 @@ export default function Signup() {
             <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-6">
               <GraduationCap className="h-8 w-8 text-white" />
             </div>
-            <h2 className="text-3xl font-bold mb-4">Join Parents Portal</h2>
+            <h2 className="text-3xl font-bold mb-4">Join  UEAB Parents Portal</h2>
             <p className="text-lg opacity-90">Connect with your child's academic journey and stay informed every step of the way</p>
           </div>
         </div>
@@ -81,7 +81,7 @@ export default function Signup() {
             </div>
             <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
             <CardDescription>
-              Join Parents Portal to start tracking your child's academic journey
+              Join UEAB Parents Portal to start tracking your child's academic journey
             </CardDescription>
           </CardHeader>
           <CardContent>
